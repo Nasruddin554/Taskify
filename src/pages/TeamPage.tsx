@@ -87,26 +87,26 @@ export default function TeamPage() {
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Team</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Team</h1>
         <p className="text-muted-foreground mt-1">
           View and manage your team members
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {team.map((member) => {
           const stats = getTaskStats(member.id);
           
           return (
-            <Card key={member.id}>
+            <Card key={member.id} className="flex flex-col h-full">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
                   <UserAvatar user={member} className="h-10 w-10" />
-                  <div>
-                    <CardTitle className="text-lg">{member.name}</CardTitle>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg truncate">{member.name}</CardTitle>
                     <CardDescription className="flex items-center gap-1 text-xs">
-                      <Mail className="h-3 w-3" />
-                      {member.email}
+                      <Mail className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{member.email}</span>
                     </CardDescription>
                   </div>
                 </div>
@@ -118,7 +118,7 @@ export default function TeamPage() {
                 </Badge>
               </CardHeader>
               
-              <CardContent>
+              <CardContent className="flex-grow">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -128,31 +128,31 @@ export default function TeamPage() {
                     <Progress value={stats.completionRate} className="h-2" />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="bg-muted/50 p-3 rounded-lg">
-                      <div className="text-2xl font-bold">{stats.total}</div>
+                      <div className="text-xl font-bold">{stats.total}</div>
                       <div className="text-xs text-muted-foreground">Total Tasks</div>
                     </div>
                     
                     <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completed}</div>
+                      <div className="text-xl font-bold text-green-600 dark:text-green-400">{stats.completed}</div>
                       <div className="text-xs text-muted-foreground">Completed</div>
                     </div>
                     
                     <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</div>
+                      <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</div>
                       <div className="text-xs text-muted-foreground">In Progress</div>
                     </div>
                     
                     <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg">
-                      <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.review}</div>
+                      <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{stats.review}</div>
                       <div className="text-xs text-muted-foreground">In Review</div>
                     </div>
                   </div>
                 </div>
               </CardContent>
               
-              <CardFooter className="pt-3">
+              <CardFooter className="pt-3 mt-auto">
                 <Button variant="outline" className="w-full">View Details</Button>
               </CardFooter>
             </Card>
