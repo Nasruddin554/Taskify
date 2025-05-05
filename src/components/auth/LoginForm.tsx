@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -26,6 +27,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
 
@@ -47,6 +49,10 @@ export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }
       setIsLoading(false);
     }
   }
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -85,13 +91,31 @@ export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="******" 
-                      type="password"
-                      autoComplete="current-password"
-                      disabled={isLoading} 
-                      {...field} 
-                    />
+                    <div className="relative">
+                      <Input 
+                        placeholder="••••••" 
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        disabled={isLoading} 
+                        {...field} 
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full px-3"
+                        onClick={togglePasswordVisibility}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">
+                          {showPassword ? "Hide password" : "Show password"}
+                        </span>
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

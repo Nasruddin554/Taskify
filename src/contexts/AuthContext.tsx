@@ -1,7 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserRole } from '@/types';
+import { User } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -9,75 +11,105 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
-
-const initialUser: User = {
-  id: "1",
-  email: "johndoe@example.com",
-  name: "John Doe",
-  role: "admin",
-  avatar: "https://i.pravatar.cc/150?u=johndoe@example.com"
-};
-
-// Mock users for demo purposes
-const mockUsers = [
-  initialUser,
-  {
-    id: "2",
-    email: "janedoe@example.com",
-    name: "Jane Doe",
-    role: "manager" as UserRole,
-    avatar: "https://i.pravatar.cc/150?u=janedoe@example.com"
-  },
-  {
-    id: "3",
-    email: "mikebrown@example.com",
-    name: "Mike Brown",
-    role: "user" as UserRole,
-    avatar: "https://i.pravatar.cc/150?u=mikebrown@example.com"
-  }
-];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is stored in localStorage
-    const storedUser = localStorage.getItem('taskify-user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Set up the auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log('Auth state changed:', event);
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          // Fetch the user profile when session changes
+          fetchUserProfile(currentSession.user.id);
+        } else {
+          setUser(null);
+        }
+      }
+    );
+
+    // Check for existing session
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          await fetchUserProfile(currentSession.user.id);
+        }
+      } catch (error) {
+        console.error('Error checking auth session:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // Transform Supabase profile to our User type
+        const userProfile: User = {
+          id: data.id,
+          email: data.email || '',
+          name: data.name || 'User',
+          role: data.role as 'admin' | 'manager' | 'user',
+          avatar: data.avatar || `https://i.pravatar.cc/150?u=${data.id}`
+        };
+        setUser(userProfile);
+      }
+    } catch (error: any) {
+      console.error('Error fetching user profile:', error.message);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Find user with matching email (mock authentication)
-      const foundUser = mockUsers.find(u => u.email === email);
-      
-      if (foundUser && password === "password") {
-        setUser(foundUser);
-        localStorage.setItem('taskify-user', JSON.stringify(foundUser));
-        toast({
-          title: "Login successful",
-          description: `Welcome back, ${foundUser.name}!`,
-        });
-      } else {
-        throw new Error("Invalid email or password");
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
       }
-    } catch (error) {
+
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: error.message,
         variant: "destructive",
       });
       throw error;
@@ -89,35 +121,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Check if email already exists
-      if (mockUsers.some(u => u.email === email)) {
-        throw new Error("Email already in use");
-      }
-      
-      // Create new user (in a real app, this would be done on the backend)
-      const newUser: User = {
-        id: `${mockUsers.length + 1}`,
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name,
-        role: "user",
-        avatar: `https://i.pravatar.cc/150?u=${email}`
-      };
-      
-      // Store user
-      setUser(newUser);
-      localStorage.setItem('taskify-user', JSON.stringify(newUser));
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Registration successful",
-        description: `Welcome to Taskify, ${name}!`,
+        description: "Welcome to Taskify!",
       });
-    } catch (error) {
+      
+    } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
+        description: error.message,
         variant: "destructive",
       });
       throw error;
@@ -126,13 +152,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('taskify-user');
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully."
-    });
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      
+      setUser(null);
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
