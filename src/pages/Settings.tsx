@@ -42,12 +42,23 @@ const profileFormSchema = z.object({
   }).optional(),
 });
 
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(1, { message: "Current password is required" }),
+  newPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
+  confirmPassword: z.string().min(1, { message: "Please confirm your password" }),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
   
   // Default form values
   const defaultValues: Partial<ProfileFormValues> = {
@@ -61,6 +72,15 @@ export default function Settings() {
     defaultValues,
   });
 
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
   function onSubmit(data: ProfileFormValues) {
     setIsSubmitting(true);
     
@@ -71,6 +91,20 @@ export default function Settings() {
         description: "Your profile has been updated successfully.",
       });
       setIsSubmitting(false);
+    }, 1000);
+  }
+
+  function onPasswordSubmit(data: PasswordFormValues) {
+    setIsPasswordSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast({
+        title: "Password updated",
+        description: "Your password has been updated successfully.",
+      });
+      setIsPasswordSubmitting(false);
+      passwordForm.reset();
     }, 1000);
   }
 
@@ -180,23 +214,57 @@ export default function Settings() {
                 Update your password
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <FormLabel>Current Password</FormLabel>
-                <Input type="password" />
-              </div>
-              <div className="space-y-2">
-                <FormLabel>New Password</FormLabel>
-                <Input type="password" />
-              </div>
-              <div className="space-y-2">
-                <FormLabel>Confirm New Password</FormLabel>
-                <Input type="password" />
-              </div>
+            <CardContent>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>New Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm New Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                
+                  <Button type="submit" disabled={isPasswordSubmitting}>
+                    {isPasswordSubmitting ? "Updating..." : "Change Password"}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
-            <CardFooter>
-              <Button>Change Password</Button>
-            </CardFooter>
           </Card>
         </TabsContent>
         
