@@ -87,7 +87,7 @@ export default function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
       dueDate: task ? new Date(task.dueDate) : new Date(),
       priority: (task?.priority as TaskPriority) || 'medium',
       status: (task?.status as TaskStatus) || 'todo',
-      assignedTo: task?.assignedTo || '',
+      assignedTo: task?.assignedTo || 'unassigned',
     }
   });
 
@@ -102,7 +102,7 @@ export default function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         dueDate: new Date(task.dueDate),
         priority: task.priority as TaskPriority,
         status: task.status as TaskStatus,
-        assignedTo: task.assignedTo || '',
+        assignedTo: task.assignedTo || 'unassigned',
       });
     } else {
       form.reset({
@@ -111,7 +111,7 @@ export default function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         dueDate: new Date(),
         priority: 'medium',
         status: 'todo',
-        assignedTo: '',
+        assignedTo: 'unassigned',
       });
     }
   }, [task, form]);
@@ -124,7 +124,7 @@ export default function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         dueDate: data.dueDate.toISOString(),
         priority: data.priority,
         status: data.status,
-        assignedTo: data.assignedTo,
+        assignedTo: data.assignedTo === 'unassigned' ? undefined : data.assignedTo,
       });
     } else {
       createTask({
@@ -133,7 +133,7 @@ export default function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
         dueDate: data.dueDate.toISOString(),
         priority: data.priority,
         status: data.status,
-        assignedTo: data.assignedTo,
+        assignedTo: data.assignedTo === 'unassigned' ? undefined : data.assignedTo,
       });
     }
     
@@ -293,7 +293,7 @@ export default function TaskDialog({ task, isOpen, onClose }: TaskDialogProps) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Unassigned</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {users.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.name}
