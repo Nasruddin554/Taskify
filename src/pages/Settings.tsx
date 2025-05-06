@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from '@/components/layout/AppLayout';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { useTheme } from 'next-themes';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -55,10 +56,36 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, updateUserProfile, changePassword } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
+  const [compactMode, setCompactMode] = useState(false);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  
+  useEffect(() => {
+    // Load user preferences from localStorage
+    const savedCompactMode = localStorage.getItem('compactMode') === 'true';
+    const savedAnimations = localStorage.getItem('animationsEnabled') !== 'false'; // Default to true
+    
+    setCompactMode(savedCompactMode);
+    setAnimationsEnabled(savedAnimations);
+    
+    // Apply compact mode if enabled
+    if (savedCompactMode) {
+      document.documentElement.classList.add('compact-mode');
+    } else {
+      document.documentElement.classList.remove('compact-mode');
+    }
+    
+    // Apply animations setting
+    if (!savedAnimations) {
+      document.documentElement.classList.add('no-animations');
+    } else {
+      document.documentElement.classList.remove('no-animations');
+    }
+  }, []);
   
   // Default form values
   const defaultValues: Partial<ProfileFormValues> = {
@@ -72,6 +99,14 @@ export default function Settings() {
     defaultValues,
   });
 
+  useEffect(() => {
+    // Update form when user data changes
+    if (user) {
+      form.setValue('name', user.name);
+      form.setValue('email', user.email);
+    }
+  }, [user, form]);
+
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues: {
@@ -81,32 +116,68 @@ export default function Settings() {
     },
   });
 
-  function onSubmit(data: ProfileFormValues) {
+  async function onSubmit(data: ProfileFormValues) {
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+    try {
+      await updateUserProfile({
+        name: data.name,
+        // We don't update email here as it requires verification
       });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   }
 
-  function onPasswordSubmit(data: PasswordFormValues) {
+  async function onPasswordSubmit(data: PasswordFormValues) {
     setIsPasswordSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Password updated",
-        description: "Your password has been updated successfully.",
-      });
+    try {
+      const success = await changePassword(data.currentPassword, data.newPassword);
+      
+      if (success) {
+        passwordForm.reset();
+      }
+    } finally {
       setIsPasswordSubmitting(false);
-      passwordForm.reset();
-    }, 1000);
+    }
   }
+
+  const handleThemeChange = (value: string) => {
+    setTheme(value);
+  };
+
+  const handleCompactModeChange = (checked: boolean) => {
+    setCompactMode(checked);
+    localStorage.setItem('compactMode', checked.toString());
+    
+    if (checked) {
+      document.documentElement.classList.add('compact-mode');
+    } else {
+      document.documentElement.classList.remove('compact-mode');
+    }
+    
+    toast({
+      title: checked ? "Compact mode enabled" : "Compact mode disabled",
+      description: checked ? "Content will now be displayed with less spacing." : "Content will now use standard spacing.",
+    });
+  };
+
+  const handleAnimationsChange = (checked: boolean) => {
+    setAnimationsEnabled(checked);
+    localStorage.setItem('animationsEnabled', checked.toString());
+    
+    if (!checked) {
+      document.documentElement.classList.add('no-animations');
+    } else {
+      document.documentElement.classList.remove('no-animations');
+    }
+    
+    toast({
+      title: checked ? "Animations enabled" : "Animations disabled",
+      description: checked ? "Interface animations and transitions will be displayed." : "Interface animations and transitions will be disabled.",
+    });
+  };
 
   return (
     <AppLayout>
@@ -118,7 +189,7 @@ export default function Settings() {
       </div>
       
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full md:w-auto flex overflow-x-auto">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
@@ -168,10 +239,10 @@ export default function Settings() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="email@example.com" {...field} />
+                          <Input placeholder="email@example.com" {...field} disabled />
                         </FormControl>
                         <FormDescription>
-                          This is the email associated with your account.
+                          Email cannot be changed directly. Please contact support if you need to update your email.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -348,15 +419,27 @@ export default function Settings() {
                 <div>
                   <h3 className="font-medium mb-2">Theme</h3>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="p-3 border rounded-md cursor-pointer bg-background flex items-center justify-center">
-                      <span className="text-sm font-medium">System</span>
-                    </div>
-                    <div className="p-3 border rounded-md cursor-pointer bg-white text-black flex items-center justify-center">
-                      <span className="text-sm font-medium">Light</span>
-                    </div>
-                    <div className="p-3 border rounded-md cursor-pointer bg-slate-950 text-white flex items-center justify-center">
-                      <span className="text-sm font-medium">Dark</span>
-                    </div>
+                    <Button
+                      variant={theme === 'system' ? 'default' : 'outline'}
+                      onClick={() => handleThemeChange('system')}
+                      className="p-3 h-auto"
+                    >
+                      System
+                    </Button>
+                    <Button
+                      variant={theme === 'light' ? 'default' : 'outline'}
+                      onClick={() => handleThemeChange('light')}
+                      className="p-3 h-auto bg-white text-black border"
+                    >
+                      Light
+                    </Button>
+                    <Button
+                      variant={theme === 'dark' ? 'default' : 'outline'}
+                      onClick={() => handleThemeChange('dark')}
+                      className="p-3 h-auto bg-slate-950 text-white"
+                    >
+                      Dark
+                    </Button>
                   </div>
                 </div>
                 
@@ -367,7 +450,10 @@ export default function Settings() {
                       Display more content with less spacing
                     </p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={compactMode}
+                    onCheckedChange={handleCompactModeChange}
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -377,13 +463,14 @@ export default function Settings() {
                       Enable animations and transitions
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={animationsEnabled}
+                    onCheckedChange={handleAnimationsChange}
+                    defaultChecked
+                  />
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button>Save Preferences</Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

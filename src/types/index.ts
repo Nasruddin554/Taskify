@@ -23,6 +23,7 @@ export interface Task {
   status: TaskStatus;
   createdBy: string;
   assignedTo?: string;
+  team_id?: string;
 }
 
 export interface Notification {
@@ -32,4 +33,24 @@ export interface Notification {
   read: boolean;
   type: 'task-assigned' | 'task-updated' | 'task-completed';
   taskId?: string;
+}
+
+export type TeamRole = 'admin' | 'member';
+
+export interface Team {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  createdBy: string;
+  joinCode: string;
+  avatar?: string;
+}
+
+export interface TeamMember {
+  id: string;
+  teamId: string;
+  userId: string;
+  role: TeamRole;
+  joinedAt: string;
 }

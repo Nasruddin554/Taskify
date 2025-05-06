@@ -12,6 +12,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUserProfile: (data: Partial<User>) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fetchUserProfile(currentSession.user.id);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
       }
     );
@@ -46,10 +49,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (currentSession?.user) {
           await fetchUserProfile(currentSession.user.id);
+        } else {
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Error checking auth session:', error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -84,8 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setUser(userProfile);
       }
+      setIsLoading(false);
     } catch (error: any) {
       console.error('Error fetching user profile:', error.message);
+      setIsLoading(false);
     }
   };
 
@@ -112,9 +118,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: error.message,
         variant: "destructive",
       });
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
@@ -137,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast({
         title: "Registration successful",
-        description: "Welcome to Taskify!",
+        description: "Welcome to Taskify! Please check your email for verification.",
       });
       
     } catch (error: any) {
@@ -146,14 +151,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: error.message,
         variant: "destructive",
       });
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error;
     }
   };
 
   const logout = async () => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
@@ -170,6 +175,74 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateUserProfile = async (data: Partial<User>) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          avatar: data.avatar,
+          // Don't update email through this method
+        })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Update local user state
+      setUser(prev => prev ? { ...prev, ...data } : null);
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully."
+      });
+      
+      return;
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    try {
+      // First verify the current password
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword,
+      });
+      
+      if (authError) throw new Error("Current password is incorrect");
+      
+      // Then update the password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully."
+      });
+      
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Password change failed",
+        description: error.message,
+        variant: "destructive"
+      });
+      return false;
     }
   };
 
@@ -181,7 +254,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading, 
         login, 
         register, 
-        logout 
+        logout,
+        updateUserProfile,
+        changePassword
       }}
     >
       {children}
