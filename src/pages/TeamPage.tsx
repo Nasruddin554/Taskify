@@ -164,8 +164,8 @@ export default function TeamPage() {
   };
 
   const copyJoinCode = () => {
-    if (currentTeam?.join_code) {
-      navigator.clipboard.writeText(currentTeam.join_code);
+    if (currentTeam?.joinCode) {
+      navigator.clipboard.writeText(currentTeam.joinCode);
       toast({
         title: "Join code copied",
         description: "Team join code has been copied to clipboard."
@@ -191,10 +191,10 @@ export default function TeamPage() {
     if (!user || !currentTeam || !teamMembers) return false;
     
     const membership = teamMembers.find(member => 
-      member.user_id === user.id && member.team_id === currentTeam.id
+      member.userId === user.id && member.teamId === currentTeam.id
     );
     
-    return membership?.role === 'admin' || currentTeam.created_by === user.id;
+    return membership?.role === 'admin' || currentTeam.createdBy === user.id;
   };
 
   const handlePromoteToAdmin = (memberId: string) => {
@@ -430,7 +430,7 @@ export default function TeamPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {currentTeam.created_by === user?.id && (
+                  {currentTeam.createdBy === user?.id && (
                     <DropdownMenuItem 
                       className="text-destructive focus:text-destructive"
                       onClick={() => setConfirmDeleteOpen(true)}
@@ -442,7 +442,7 @@ export default function TeamPage() {
               </DropdownMenu>
             )}
 
-            {currentTeam.created_by !== user?.id && (
+            {currentTeam.createdBy !== user?.id && (
               <Button 
                 variant="outline" 
                 className="gap-2 text-destructive hover:text-destructive"
@@ -616,17 +616,17 @@ export default function TeamPage() {
   const renderTeamMembers = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
       {teamMembers.map((member) => {
-        const stats = getTaskStats(member.user_id);
+        const stats = getTaskStats(member.userId);
         const memberUser: User = {
-          id: member.user_id,
+          id: member.userId,
           name: member.user?.name || 'Unknown User',
           email: member.user?.email || '',
           role: 'user',
           avatar: member.user?.avatar
         };
         
-        const isCreator = currentTeam?.created_by === member.user_id;
-        const isCurrentUser = user?.id === member.user_id;
+        const isCreator = currentTeam?.createdBy === member.userId;
+        const isCurrentUser = user?.id === member.userId;
         
         return (
           <Card key={member.id} className="flex flex-col h-full relative">

@@ -172,9 +172,15 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
 
   const updateTeam = async (teamId: string, data: Partial<Team>) => {
     try {
+      // Convert from our frontend model to DB schema
+      const dbData: any = {};
+      if (data.name) dbData.name = data.name;
+      if (data.description !== undefined) dbData.description = data.description;
+      if (data.avatar !== undefined) dbData.avatar = data.avatar;
+      
       const { error } = await supabase
         .from('teams')
-        .update(data)
+        .update(dbData)
         .eq('id', teamId);
         
       if (error) throw error;
@@ -272,9 +278,20 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
         
       if (joinError) throw joinError;
       
+      // Format the team data and update local state
+      const formattedTeam: Team = {
+        id: team.id,
+        name: team.name,
+        description: team.description || undefined,
+        createdAt: team.created_at,
+        createdBy: team.created_by,
+        joinCode: team.join_code,
+        avatar: team.avatar || undefined
+      };
+      
       // Update local state
-      setTeams(prev => [...prev, team]);
-      setCurrentTeam(team);
+      setTeams(prev => [...prev, formattedTeam]);
+      setCurrentTeam(formattedTeam);
       
       toast({
         title: "Team joined",
@@ -299,7 +316,7 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
       
       // Check if user is the team creator
       const team = teams.find(t => t.id === teamId);
-      if (team?.created_by === user.id) {
+      if (team?.createdBy === user.id) {
         throw new Error("As the team creator, you cannot leave the team. You must delete it instead.");
       }
       

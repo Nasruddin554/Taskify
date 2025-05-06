@@ -276,8 +276,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({ isOpen, onClose, task }) => {
               <SelectContent>
                 <SelectItem value={user?.id || ''}>Myself</SelectItem>
                 {teamMembers.map(member => (
-                  member.user_id !== user?.id && (
-                    <SelectItem key={member.user_id} value={member.user_id}>
+                  member.userId !== user?.id && (
+                    <SelectItem key={member.userId} value={member.userId}>
                       {member.user?.name || 'Unknown User'}
                     </SelectItem>
                   )
