@@ -53,4 +53,9 @@ export interface TeamMember {
   userId: string;
   role: TeamRole;
   joinedAt: string;
+  user?: {
+    name: string;
+    email: string;
+    avatar: string | null;
+  };
 }

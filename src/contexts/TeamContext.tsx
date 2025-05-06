@@ -3,29 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
-
-interface Team {
-  id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-  created_by: string;
-  join_code: string;
-  avatar: string | null;
-}
-
-interface TeamMember {
-  id: string;
-  team_id: string;
-  user_id: string;
-  role: 'admin' | 'member';
-  joined_at: string;
-  user?: {
-    name: string;
-    email: string;
-    avatar: string | null;
-  };
-}
+import { TeamRole, Team, TeamMember } from '@/types';
 
 interface TeamContextType {
   teams: Team[];
@@ -39,7 +17,7 @@ interface TeamContextType {
   leaveTeam: (teamId: string) => Promise<void>;
   setCurrentTeam: (team: Team | null) => void;
   getTeamMembers: (teamId: string) => Promise<TeamMember[]>;
-  changeTeamMemberRole: (teamMemberId: string, role: 'admin' | 'member') => Promise<void>;
+  changeTeamMemberRole: (teamMemberId: string, role: TeamRole) => Promise<void>;
   removeTeamMember: (teamMemberId: string) => Promise<void>;
 }
 
@@ -86,13 +64,23 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
           
         if (teamsError) throw teamsError;
         
-        setTeams(teamsData || []);
+        const formattedTeams: Team[] = teamsData?.map(team => ({
+          id: team.id,
+          name: team.name,
+          description: team.description || undefined,
+          createdAt: team.created_at,
+          createdBy: team.created_by,
+          joinCode: team.join_code,
+          avatar: team.avatar || undefined
+        })) || [];
+        
+        setTeams(formattedTeams);
         
         // If we found teams but there's no current team selected, set the first one
-        if (teamsData && teamsData.length > 0 && !currentTeam) {
-          setCurrentTeam(teamsData[0]);
+        if (formattedTeams.length > 0 && !currentTeam) {
+          setCurrentTeam(formattedTeams[0]);
           // Also fetch members for this team
-          await getTeamMembers(teamsData[0].id);
+          await getTeamMembers(formattedTeams[0].id);
         }
       } else {
         setTeams([]);
@@ -148,16 +136,27 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
           
         if (memberError) throw memberError;
         
+        // Format the team data
+        const formattedTeam: Team = {
+          id: data.id,
+          name: data.name,
+          description: data.description || undefined,
+          createdAt: data.created_at,
+          createdBy: data.created_by,
+          joinCode: data.join_code,
+          avatar: data.avatar || undefined
+        };
+        
         // Update local state
-        setTeams(prev => [...prev, data]);
-        setCurrentTeam(data);
+        setTeams(prev => [...prev, formattedTeam]);
+        setCurrentTeam(formattedTeam);
         
         toast({
           title: "Team created",
           description: `The team "${name}" has been created successfully.`,
         });
         
-        return data;
+        return formattedTeam;
       }
       return null;
     } catch (error: any) {
@@ -340,17 +339,29 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
         .from('team_members')
         .select(`
           *,
-          user:user_id (
-            name:name,
-            email:email,
-            avatar:avatar
+          profiles:user_id (
+            name,
+            email,
+            avatar
           )
         `)
         .eq('team_id', teamId);
         
       if (error) throw error;
       
-      const members = data || [];
+      const members: TeamMember[] = data?.map(member => ({
+        id: member.id,
+        teamId: member.team_id,
+        userId: member.user_id,
+        role: member.role as TeamRole, // Cast the role to TeamRole
+        joinedAt: member.joined_at,
+        user: member.profiles ? {
+          name: member.profiles.name,
+          email: member.profiles.email,
+          avatar: member.profiles.avatar
+        } : undefined
+      })) || [];
+      
       setTeamMembers(members);
       return members;
     } catch (error: any) {
@@ -359,7 +370,7 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const changeTeamMemberRole = async (teamMemberId: string, role: 'admin' | 'member') => {
+  const changeTeamMemberRole = async (teamMemberId: string, role: TeamRole) => {
     try {
       const { error } = await supabase
         .from('team_members')
