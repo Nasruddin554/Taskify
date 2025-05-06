@@ -352,32 +352,43 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
 
   const getTeamMembers = async (teamId: string): Promise<TeamMember[]> => {
     try {
-      const { data, error } = await supabase
+      // First, fetch all team members for the specified team
+      const { data: memberData, error: memberError } = await supabase
         .from('team_members')
-        .select(`
-          *,
-          profiles:user_id (
-            name,
-            email,
-            avatar
-          )
-        `)
+        .select('*')
         .eq('team_id', teamId);
         
-      if (error) throw error;
+      if (memberError) throw memberError;
       
-      const members: TeamMember[] = data?.map(member => ({
-        id: member.id,
-        teamId: member.team_id,
-        userId: member.user_id,
-        role: member.role as TeamRole, // Cast the role to TeamRole
-        joinedAt: member.joined_at,
-        user: member.profiles ? {
-          name: member.profiles.name,
-          email: member.profiles.email,
-          avatar: member.profiles.avatar
-        } : undefined
-      })) || [];
+      // For each team member, fetch their profile data
+      const members: TeamMember[] = [];
+      
+      for (const member of memberData || []) {
+        // Fetch the user profile separately
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('name, email, avatar')
+          .eq('id', member.user_id)
+          .single();
+          
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error fetching user profile:', profileError);
+        }
+        
+        // Create the team member object with correct typing
+        members.push({
+          id: member.id,
+          teamId: member.team_id,
+          userId: member.user_id,
+          role: member.role as TeamRole, // Cast the role to TeamRole
+          joinedAt: member.joined_at,
+          user: profile ? {
+            name: profile.name || 'Unknown User',
+            email: profile.email || '',
+            avatar: profile.avatar
+          } : undefined
+        });
+      }
       
       setTeamMembers(members);
       return members;
