@@ -16,7 +16,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, Mail } from 'lucide-react';
+import { 
+  Clock, 
+  Mail, 
+  UserPlus, 
+  Users, 
+  MessagesSquare,
+  MessageSquarePlus 
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from '@/hooks/use-toast';
 
 // Mock team members for demo
 const teamMembers: User[] = [
@@ -59,9 +79,16 @@ const teamMembers: User[] = [
 
 export default function TeamPage() {
   const { tasks } = useTask();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   // For a real app, we would fetch this data from an API
-  const [team] = useState<User[]>(teamMembers);
+  const [team, setTeam] = useState<User[]>(teamMembers);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [message, setMessage] = useState('');
 
   const getTaskStats = (userId: string) => {
     const userTasks = tasks.filter(task => task.assignedTo === userId);
@@ -84,13 +111,98 @@ export default function TeamPage() {
     };
   };
 
+  const handleInviteMember = () => {
+    if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // In a real app, this would call an API to send an invitation
+    toast({
+      title: "Invitation sent",
+      description: `An invitation has been sent to ${inviteEmail}`,
+    });
+    
+    setInviteEmail('');
+    setIsInviteDialogOpen(false);
+  };
+
+  const handleSendMessage = () => {
+    if (!message.trim() || !selectedMember) {
+      toast({
+        title: "Empty message",
+        description: "Please enter a message to send",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // In a real app, this would call an API to send a message
+    toast({
+      title: "Message sent",
+      description: `Message sent to ${selectedMember.name}`,
+    });
+    
+    setMessage('');
+    setIsMessageDialogOpen(false);
+    setSelectedMember(null);
+  };
+
+  const openMessageDialog = (member: User) => {
+    setSelectedMember(member);
+    setIsMessageDialogOpen(true);
+  };
+
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Team</h1>
-        <p className="text-muted-foreground mt-1">
-          View and manage your team members
-        </p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Team</h1>
+            <p className="text-muted-foreground mt-1">
+              View and manage your team members
+            </p>
+          </div>
+          <Button 
+            onClick={() => setIsInviteDialogOpen(true)}
+            className="mt-4 sm:mt-0 gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Invite Member
+          </Button>
+        </div>
+
+        {/* Team stats summary */}
+        <div className="mt-6 p-4 bg-muted rounded-lg">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+            <div className="flex items-center gap-3 mb-3 sm:mb-0">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Team Size</div>
+                <div className="text-xl font-bold">{team.length} members</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-green-500/10">
+                <Clock className="h-5 w-5 text-green-500" />
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Avg. Task Completion</div>
+                <div className="text-xl font-bold">
+                  {team.length > 0 ? 
+                    Math.round(team.reduce((acc, member) => 
+                      acc + getTaskStats(member.id).completionRate, 0) / team.length) : 0}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -152,13 +264,127 @@ export default function TeamPage() {
                 </div>
               </CardContent>
               
-              <CardFooter className="pt-3 mt-auto">
-                <Button variant="outline" className="w-full">View Details</Button>
+              <CardFooter className="pt-3 mt-auto flex flex-col sm:flex-row gap-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => openMessageDialog(member)}
+                >
+                  <MessagesSquare className="h-4 w-4 mr-2" />
+                  Message
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  className="w-full"
+                  onClick={() => {
+                    toast({
+                      title: "Profile viewed",
+                      description: `Viewing ${member.name}'s detailed profile`
+                    });
+                  }}
+                >
+                  View Details
+                </Button>
               </CardFooter>
             </Card>
           );
         })}
       </div>
+
+      {/* Invite Member Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite Team Member</DialogTitle>
+            <DialogDescription>
+              Enter the email address of the person you'd like to invite to your team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="colleague@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <select 
+                id="role"
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                defaultValue="user"
+              >
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="user">User</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="message">Personal message (optional)</Label>
+              <Textarea
+                id="message"
+                placeholder="I'd like to invite you to join our team..."
+                className="resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleInviteMember}>
+              Send Invitation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Message Member Dialog */}
+      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Message</DialogTitle>
+            <DialogDescription>
+              {selectedMember && `Compose a message to ${selectedMember.name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedMember && (
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-md">
+                <UserAvatar user={selectedMember} className="h-10 w-10" />
+                <div>
+                  <div className="font-medium">{selectedMember.name}</div>
+                  <div className="text-sm text-muted-foreground">{selectedMember.email}</div>
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="message-content">Message</Label>
+              <Textarea
+                id="message-content"
+                placeholder="Type your message here..."
+                className="resize-none min-h-[120px]"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendMessage}>
+              <MessageSquarePlus className="h-4 w-4 mr-2" />
+              Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   );
 }

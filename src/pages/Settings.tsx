@@ -29,6 +29,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { 
+  AlertCircle,
+  Check,
+  Loader2
+} from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -59,6 +75,20 @@ export default function Settings() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState({
+    taskAssignments: true,
+    taskUpdates: true,
+    taskCompletions: true,
+    reminders: true,
+    emailNotifications: false,
+  });
+  const [appearanceSettings, setAppearanceSettings] = useState({
+    theme: 'system',
+    compactMode: false,
+    animations: true,
+  });
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [accountAction, setAccountAction] = useState<'delete' | 'deactivate' | null>(null);
   
   // Default form values
   const defaultValues: Partial<ProfileFormValues> = {
@@ -108,6 +138,56 @@ export default function Settings() {
     }, 1000);
   }
 
+  function saveNotificationSettings() {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast({
+        title: "Notification preferences saved",
+        description: "Your notification settings have been updated successfully.",
+      });
+      setIsSubmitting(false);
+    }, 1000);
+  }
+
+  function saveAppearanceSettings() {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      toast({
+        title: "Appearance settings saved",
+        description: "Your appearance settings have been updated successfully.",
+      });
+      setIsSubmitting(false);
+    }, 1000);
+  }
+
+  function handleAccountAction() {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      if (accountAction === 'delete') {
+        toast({
+          title: "Account deleted",
+          description: "Your account has been permanently deleted.",
+          variant: "destructive",
+        });
+      } else if (accountAction === 'deactivate') {
+        toast({
+          title: "Account deactivated",
+          description: "Your account has been temporarily deactivated.",
+          variant: "destructive",
+        });
+      }
+      setIsSubmitting(false);
+      setIsConfirmDialogOpen(false);
+      setAccountAction(null);
+    }, 2000);
+  }
+
   return (
     <AppLayout>
       <div className="mb-6">
@@ -122,6 +202,7 @@ export default function Settings() {
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile" className="space-y-4">
@@ -136,7 +217,12 @@ export default function Settings() {
               <div className="flex items-center space-x-4 mb-6">
                 {user && <UserAvatar user={user} className="h-16 w-16" />}
                 <div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    toast({
+                      title: "Feature coming soon",
+                      description: "Avatar upload will be available in a future update.",
+                    });
+                  }}>
                     Change Avatar
                   </Button>
                 </div>
@@ -200,7 +286,16 @@ export default function Settings() {
                   />
                   
                   <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : "Save changes"}
+                    {isSubmitting ? 
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </> : 
+                      <>
+                        <Check className="mr-2 h-4 w-4" /> 
+                        Save changes
+                      </>
+                    }
                   </Button>
                 </form>
               </Form>
@@ -260,7 +355,13 @@ export default function Settings() {
                   />
                 
                   <Button type="submit" disabled={isPasswordSubmitting}>
-                    {isPasswordSubmitting ? "Updating..." : "Change Password"}
+                    {isPasswordSubmitting ? 
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Updating...
+                      </> : 
+                      "Change Password"
+                    }
                   </Button>
                 </form>
               </Form>
@@ -285,7 +386,12 @@ export default function Settings() {
                       Receive notifications when tasks are assigned to you
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={notificationSettings.taskAssignments}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, taskAssignments: checked})
+                    }
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -295,7 +401,12 @@ export default function Settings() {
                       Receive notifications when your assigned tasks are updated
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={notificationSettings.taskUpdates}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, taskUpdates: checked})
+                    }
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -305,7 +416,12 @@ export default function Settings() {
                       Receive notifications when your assigned tasks are completed
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={notificationSettings.taskCompletions}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, taskCompletions: checked})
+                    }
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -315,7 +431,12 @@ export default function Settings() {
                       Receive reminders for upcoming due dates
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={notificationSettings.reminders}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, reminders: checked})
+                    }
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -325,12 +446,25 @@ export default function Settings() {
                       Receive email notifications for important updates
                     </p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={notificationSettings.emailNotifications}
+                    onCheckedChange={(checked) => 
+                      setNotificationSettings({...notificationSettings, emailNotifications: checked})
+                    }
+                  />
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button>Save Preferences</Button>
+              <Button onClick={saveNotificationSettings} disabled={isSubmitting}>
+                {isSubmitting ? 
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </> : 
+                  "Save Preferences"
+                }
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -348,15 +482,33 @@ export default function Settings() {
                 <div>
                   <h3 className="font-medium mb-2">Theme</h3>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="p-3 border rounded-md cursor-pointer bg-background flex items-center justify-center">
-                      <span className="text-sm font-medium">System</span>
-                    </div>
-                    <div className="p-3 border rounded-md cursor-pointer bg-white text-black flex items-center justify-center">
-                      <span className="text-sm font-medium">Light</span>
-                    </div>
-                    <div className="p-3 border rounded-md cursor-pointer bg-slate-950 text-white flex items-center justify-center">
-                      <span className="text-sm font-medium">Dark</span>
-                    </div>
+                    <Button 
+                      variant={appearanceSettings.theme === 'system' ? 'default' : 'outline'} 
+                      className="justify-center"
+                      onClick={() => setAppearanceSettings({
+                        ...appearanceSettings, theme: 'system'
+                      })}
+                    >
+                      System
+                    </Button>
+                    <Button 
+                      variant={appearanceSettings.theme === 'light' ? 'default' : 'outline'} 
+                      className="justify-center"
+                      onClick={() => setAppearanceSettings({
+                        ...appearanceSettings, theme: 'light'
+                      })}
+                    >
+                      Light
+                    </Button>
+                    <Button 
+                      variant={appearanceSettings.theme === 'dark' ? 'default' : 'outline'} 
+                      className="justify-center"
+                      onClick={() => setAppearanceSettings({
+                        ...appearanceSettings, theme: 'dark'
+                      })}
+                    >
+                      Dark
+                    </Button>
                   </div>
                 </div>
                 
@@ -367,7 +519,12 @@ export default function Settings() {
                       Display more content with less spacing
                     </p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={appearanceSettings.compactMode}
+                    onCheckedChange={(checked) => 
+                      setAppearanceSettings({...appearanceSettings, compactMode: checked})
+                    }
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -377,16 +534,110 @@ export default function Settings() {
                       Enable animations and transitions
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={appearanceSettings.animations}
+                    onCheckedChange={(checked) => 
+                      setAppearanceSettings({...appearanceSettings, animations: checked})
+                    }
+                  />
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button>Save Preferences</Button>
+              <Button onClick={saveAppearanceSettings} disabled={isSubmitting}>
+                {isSubmitting ? 
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </> : 
+                  "Save Preferences"
+                }
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
+        
+        <TabsContent value="account">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account</CardTitle>
+              <CardDescription>
+                Manage your account settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="p-4 border border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30 rounded-md">
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400 mr-3 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-orange-600 dark:text-orange-400">Account management</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Deactivating your account will temporarily hide your profile and content. 
+                        Deleting your account is permanent and cannot be undone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setAccountAction('deactivate');
+                      setIsConfirmDialogOpen(true);
+                    }}
+                  >
+                    Deactivate Account
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => {
+                      setAccountAction('delete');
+                      setIsConfirmDialogOpen(true);
+                    }}
+                  >
+                    Delete Account
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Confirmation Dialog for Account Actions */}
+      <AlertDialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {accountAction === 'delete' ? 'Delete Account?' : 'Deactivate Account?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {accountAction === 'delete' 
+                ? 'This action cannot be undone. This will permanently delete your account and remove all your data from our servers.'
+                : 'Your account will be hidden and you will not receive notifications. You can reactivate your account at any time by logging in again.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleAccountAction}
+              className={accountAction === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {accountAction === 'delete' ? 'Deleting...' : 'Deactivating...'}
+                </>
+              ) : (
+                accountAction === 'delete' ? 'Delete Account' : 'Deactivate Account'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
