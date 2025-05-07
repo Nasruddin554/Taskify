@@ -7,12 +7,10 @@ import TaskDialog from '@/components/tasks/TaskDialog';
 import { Task } from '@/types';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function TasksPage() {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
-  const isMobile = useIsMobile();
   
   const handleCreateTask = () => {
     setCurrentTask(undefined);
@@ -40,7 +38,7 @@ export default function TasksPage() {
             </p>
           </div>
           
-          <Button onClick={handleCreateTask} className="mt-4 md:mt-0 gap-2 w-full md:w-auto">
+          <Button onClick={handleCreateTask} className="mt-4 md:mt-0 gap-2">
             <PlusCircle className="h-4 w-4" />
             Create New Task
           </Button>

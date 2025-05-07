@@ -16,8 +16,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff } from 'lucide-react';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useNavigate } from 'react-router-dom';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -35,9 +33,7 @@ export default function RegisterForm({ onToggleForm }: { onToggleForm: () => voi
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const { register } = useAuth();
-  const navigate = useNavigate();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -53,40 +49,11 @@ export default function RegisterForm({ onToggleForm }: { onToggleForm: () => voi
     setIsLoading(true);
     try {
       await register(data.name, data.email, data.password);
-      setRegistrationSuccess(true);
-      
-      // Wait a bit before redirecting to login form
-      setTimeout(() => {
-        onToggleForm();
-      }, 3000);
+      // Success is handled in the AuthContext
     } catch (error) {
       // Error is handled in the AuthContext
       setIsLoading(false);
     }
-  }
-
-  if (registrationSuccess) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Registration Successful!</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertDescription className="text-center">
-              Your account has been created successfully. Please check your email to verify your account.
-              <br />
-              You will be redirected to login in a few seconds...
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button onClick={onToggleForm} variant="outline">
-            Go to Login
-          </Button>
-        </CardFooter>
-      </Card>
-    );
   }
 
   return (
@@ -226,7 +193,7 @@ export default function RegisterForm({ onToggleForm }: { onToggleForm: () => voi
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Button variant="link" className="p-0" onClick={onToggleForm} type="button">
+          <Button variant="link" className="p-0" onClick={onToggleForm}>
             Login
           </Button>
         </p>

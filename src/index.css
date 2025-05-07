@@ -2,131 +2,104 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 220 33% 99%;
+    --foreground: 240 10% 20%;
+
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 10% 20%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
+    --popover-foreground: 240 10% 20%;
+
+    --primary: 230 83% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 244 54% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 20% 94%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+
+    --accent: 250 95% 69%;
+    --accent-foreground: 0 0% 100%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
+
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 142.1 76.2% 36.3%;
+    --ring: 230 83% 60%;
+
     --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 230 83% 60%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 0 0% 95%;
-    --card: 24 9.8% 10%;
-    --card-foreground: 0 0% 95%;
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 142.1 70.6% 45.3%;
-    --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 240 3.7% 15.9%;
+    --background: 240 10% 12%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 16%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 16%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 230 83% 60%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 244 54% 50%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 12 6.5% 15.1%;
+
+    --muted: 240 6% 25%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 250 95% 69%;
     --accent-foreground: 0 0% 98%;
+
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142.4 71.8% 29.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 6% 25%;
+    --input: 240 6% 25%;
+    --ring: 230 83% 60%;
+    
+    --sidebar-background: 240 10% 12%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 230 83% 60%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 10% 20%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 6% 25%;
+    --sidebar-ring: 230 83% 60%;
   }
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Transition all states */
-* {
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
-}
-
-/* Remove transitions for those who prefer reduced motion */
-@media (prefers-reduced-motion) {
-  * {
-    transition: none !important;
-  }
-}
-
-/* No animations class */
-.no-animations * {
-  transition: none !important;
-  animation: none !important;
-}
-
-/* Compact mode */
-.compact-mode .card,
-.compact-mode .card-content,
-.compact-mode .card-header,
-.compact-mode .card-footer {
-  padding: 0.75rem !important;
-}
-
-.compact-mode .space-y-4 {
-  margin-top: 0.5rem !important;
-  margin-bottom: 0.5rem !important;
-}
-
-.compact-mode .p-4 {
-  padding: 0.75rem !important;
-}
-
-.compact-mode .gap-4 {
-  gap: 0.75rem !important;
-}
-
-.compact-mode .text-3xl {
-  font-size: 1.5rem !important;
-  line-height: 1.75rem !important;
-}
-
-.compact-mode .text-2xl {
-  font-size: 1.25rem !important;
-  line-height: 1.5rem !important;
-}
-
-.compact-mode .py-4 {
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.75rem !important;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
-/* Fix for mobile responsiveness */
-@media (max-width: 640px) {
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .dialog-content {
-    width: calc(100% - 2rem) !important;
-    max-width: none !important;
-  }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

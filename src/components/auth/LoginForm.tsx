@@ -17,7 +17,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -31,7 +30,6 @@ export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -45,15 +43,10 @@ export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }
     setIsLoading(true);
     try {
       await login(data.email, data.password);
-      // Wait for authentication to complete, then navigate
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 500);
-    } catch (error: any) {
-      // Reset loading state to allow the user to try again
-      setIsLoading(false);
+      // Success is handled in the AuthContext
+    } catch (error) {
       // Error is handled in the AuthContext
-      console.error("Login error:", error.message);
+      setIsLoading(false);
     }
   }
 
@@ -143,7 +136,7 @@ export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">
           Don't have an account?{" "}
-          <Button variant="link" className="p-0" onClick={onToggleForm} type="button">
+          <Button variant="link" className="p-0" onClick={onToggleForm}>
             Register
           </Button>
         </p>
