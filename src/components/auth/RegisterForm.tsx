@@ -15,7 +15,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/use-toast';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -33,7 +35,10 @@ export default function RegisterForm({ onToggleForm }: { onToggleForm: () => voi
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const { register } = useAuth();
+  const { toast } = useToast();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -49,11 +54,46 @@ export default function RegisterForm({ onToggleForm }: { onToggleForm: () => voi
     setIsLoading(true);
     try {
       await register(data.name, data.email, data.password);
-      // Success is handled in the AuthContext
+      // Show success message
+      setRegisteredEmail(data.email);
+      setRegistrationSuccess(true);
     } catch (error) {
       // Error is handled in the AuthContext
+    } finally {
       setIsLoading(false);
     }
+  }
+
+  // If registration was successful, show the verification instructions
+  if (registrationSuccess) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl text-center">Check Your Email</CardTitle>
+          <CardDescription className="text-center">
+            Registration successful! Please verify your email to continue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <Mail className="h-4 w-4" />
+            <AlertTitle>Verification Required</AlertTitle>
+            <AlertDescription>
+              We've sent an email to <strong>{registeredEmail}</strong>. Please click the link in that email to verify your account.
+            </AlertDescription>
+          </Alert>
+          <div className="text-sm text-muted-foreground">
+            <p>After verifying your email, you'll be able to log in to your account.</p>
+            <p className="mt-2">Didn't receive the email? Check your spam folder or try again.</p>
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button variant="secondary" onClick={onToggleForm}>
+            Return to Login
+          </Button>
+        </CardFooter>
+      </Card>
+    );
   }
 
   return (

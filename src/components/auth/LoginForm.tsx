@@ -16,7 +16,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -28,7 +30,9 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetEmailSent, setIsResetEmailSent] = useState(false);
+  const { login, resetPassword } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
@@ -49,6 +53,32 @@ export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }
       setIsLoading(false);
     }
   }
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await resetPassword(resetEmail);
+      setIsResetEmailSent(true);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for a password reset link",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to Send Reset Email",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -121,6 +151,49 @@ export default function LoginForm({ onToggleForm }: { onToggleForm: () => void }
                 </FormItem>
               )}
             />
+            <div className="flex justify-end">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="link" size="sm" className="px-0 font-normal">
+                    Forgot password?
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Reset Password</DialogTitle>
+                    <DialogDescription>
+                      Enter your email address and we'll send you a link to reset your password.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="reset-email" className="text-right">
+                        Email
+                      </Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        placeholder="email@example.com"
+                        className="col-span-3"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    {isResetEmailSent ? (
+                      <DialogClose asChild>
+                        <Button type="button">Close</Button>
+                      </DialogClose>
+                    ) : (
+                      <Button type="button" onClick={handleResetPassword}>
+                        Send Reset Link
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
             <div className="pt-2">
               <Button 
                 type="submit" 

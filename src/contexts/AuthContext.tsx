@@ -4,6 +4,7 @@ import { User } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -12,6 +13,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up the auth state listener
@@ -32,6 +35,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (currentSession?.user) {
           // Fetch the user profile when session changes
           fetchUserProfile(currentSession.user.id);
+          
+          // Navigate to dashboard on sign in
+          if (event === 'SIGNED_IN') {
+            navigate('/dashboard');
+          }
         } else {
           setUser(null);
         }
@@ -59,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -106,12 +114,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Welcome back!",
       });
       
+      // Navigation is handled by the auth state change listener
+      
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      // Check if the error is due to unconfirmed email
+      if (error.message.includes('Email not confirmed')) {
+        toast({
+          title: "Email not confirmed",
+          description: "Please check your inbox and confirm your email address before logging in.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -137,8 +156,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast({
         title: "Registration successful",
-        description: "Welcome to Taskify!",
+        description: "Please check your email to verify your account before logging in.",
       });
+      
+      // Show the login form after successful registration
+      navigate('/auth');
       
     } catch (error: any) {
       toast({
@@ -152,6 +174,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/auth',
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return Promise.resolve();
+    } catch (error: any) {
+      toast({
+        title: "Password reset failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -160,6 +203,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       setUser(null);
+      navigate('/auth');
+      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully."
@@ -181,7 +226,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading, 
         login, 
         register, 
-        logout 
+        logout,
+        resetPassword
       }}
     >
       {children}

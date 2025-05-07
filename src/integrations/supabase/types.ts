@@ -88,6 +88,7 @@ export type Database = {
           id: string
           priority: string | null
           status: string | null
+          team_id: string | null
           title: string
           updated_at: string
         }
@@ -100,6 +101,7 @@ export type Database = {
           id?: string
           priority?: string | null
           status?: string | null
+          team_id?: string | null
           title: string
           updated_at?: string
         }
@@ -112,8 +114,79 @@ export type Database = {
           id?: string
           priority?: string | null
           status?: string | null
+          team_id?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          joined_at: string
+          role: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          role?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          role?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          join_code: string
+          name: string
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          join_code: string
+          name: string
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          join_code?: string
+          name?: string
         }
         Relationships: []
       }
@@ -122,7 +195,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_team_join_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
