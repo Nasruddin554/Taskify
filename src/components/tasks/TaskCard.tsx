@@ -12,7 +12,8 @@ import {
   Trash2, 
   CheckCircle2,
   AlertCircle,
-  ArrowRightCircle  
+  ArrowRightCircle,
+  Play  
 } from 'lucide-react';
 
 interface TaskCardProps {
@@ -57,6 +58,63 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
 
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
+  // Helper function to render action button based on task status
+  const renderActionButton = () => {
+    if (task.status === 'completed') {
+      return (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-amber-600 gap-2 px-4"
+          onClick={() => handleStatusChange('todo')}
+        >
+          Reopen
+        </Button>
+      );
+    }
+    
+    if (task.status === 'review') {
+      return (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-blue-600 gap-2 px-4"
+          onClick={() => handleStatusChange('completed')}
+        >
+          <CheckCircle2 className="w-4 h-4" />
+          Complete
+        </Button>
+      );
+    }
+    
+    if (task.status === 'in-progress') {
+      return (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="text-blue-600 gap-2 px-4"
+          onClick={() => handleStatusChange('review')}
+        >
+          <ArrowRightCircle className="w-4 h-4" />
+          Review
+        </Button>
+      );
+    }
+    
+    // Todo status
+    return (
+      <Button 
+        variant="ghost" 
+        size="sm"
+        className="text-blue-600 gap-2 px-4"
+        onClick={() => handleStatusChange('in-progress')}
+      >
+        <Play className="w-4 h-4" />
+        Start
+      </Button>
+    );
+  };
+
   return (
     <Card className={`w-full hover:shadow-md transition-shadow ${isOverdue ? 'border-red-400' : ''}`}>
       <CardContent className="p-4">
@@ -96,61 +154,34 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
         </div>
       </CardContent>
       
-      <CardFooter className="px-4 py-3 flex justify-between bg-muted/30">
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onEdit(task)}
-          >
-            <Edit className="w-4 h-4 mr-1" />
-            Edit
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => deleteTask(task.id)}
-          >
-            <Trash2 className="w-4 h-4 mr-1" />
-            Delete
-          </Button>
-        </div>
-        
-        <div className="flex space-x-2">
-          {task.status !== 'completed' ? (
-            task.status === 'review' ? (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-green-600"
-                onClick={() => handleStatusChange('completed')}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Complete
-              </Button>
-            ) : (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-blue-600"
-                onClick={() => handleStatusChange(
-                  task.status === 'todo' ? 'in-progress' : 'review'
-                )}
-              >
-                <ArrowRightCircle className="w-4 h-4 mr-1" />
-                {task.status === 'todo' ? 'Start' : 'Review'}
-              </Button>
-            )
-          ) : (
+      <CardFooter className="p-0 bg-muted/30">
+        <div className="w-full flex flex-col sm:flex-row">
+          {/* Action buttons - Edit and Delete */}
+          <div className="flex border-b sm:border-b-0 sm:border-r border-border">
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-amber-600"
-              onClick={() => handleStatusChange('todo')}
+              onClick={() => onEdit(task)}
+              className="flex-1 rounded-none h-11 gap-2"
             >
-              Reopen
+              <Edit className="w-4 h-4" />
+              Edit
             </Button>
-          )}
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => deleteTask(task.id)}
+              className="flex-1 rounded-none h-11 gap-2 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </Button>
+          </div>
+          
+          {/* Status action button */}
+          <div className="flex-1 flex justify-center">
+            {renderActionButton()}
+          </div>
         </div>
       </CardFooter>
     </Card>
