@@ -59,7 +59,7 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   return (
-    <Card className={`w-full hover:shadow-md transition-shadow ${isOverdue ? 'border-red-400' : ''}`}>
+    <Card className={`w-full hover:shadow-md transition-shadow ${isOverdue ? 'border-red-400' : ''} bg-[#1e1e24] text-white`}>
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-medium text-lg">{task.title}</h3>
@@ -97,13 +97,13 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
         </div>
       </CardContent>
       
-      {/* Desktop appearance for larger screens, mobile optimized for smaller screens */}
-      <CardFooter className="px-4 py-3 flex sm:justify-between bg-muted/30 flex-col sm:flex-row">
-        <div className="flex space-x-2 mb-2 sm:mb-0">
+      <CardFooter className="px-4 py-3 flex sm:flex-row justify-between bg-[#252530] border-t border-gray-700 flex-col gap-2 sm:gap-0">
+        <div className="flex space-x-2">
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => onEdit(task)}
+            className="bg-transparent border-gray-600 hover:bg-gray-700"
           >
             <Edit className="w-4 h-4 mr-1" />
             Edit
@@ -112,20 +112,20 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
             variant="outline" 
             size="sm"
             onClick={() => deleteTask(task.id)}
-            className="text-destructive hover:text-destructive"
+            className="bg-transparent border-gray-600 hover:bg-gray-700 text-red-400 hover:text-red-300"
           >
             <Trash2 className="w-4 h-4 mr-1" />
             Delete
           </Button>
         </div>
         
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 w-full sm:w-auto">
           {task.status !== 'completed' ? (
             task.status === 'review' ? (
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="text-green-600"
+                className="text-green-400 hover:bg-green-900/30 w-full sm:w-auto justify-center"
                 onClick={() => handleStatusChange('completed')}
               >
                 <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -135,7 +135,7 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="text-blue-600"
+                className="text-blue-400 hover:bg-blue-900/30 w-full sm:w-auto justify-center"
                 onClick={() => handleStatusChange(
                   task.status === 'todo' ? 'in-progress' : 'review'
                 )}
@@ -152,7 +152,7 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-amber-600"
+              className="text-amber-400 hover:bg-amber-900/30 w-full sm:w-auto justify-center"
               onClick={() => handleStatusChange('todo')}
             >
               Reopen
