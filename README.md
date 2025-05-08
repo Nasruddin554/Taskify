@@ -152,4 +152,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-Project Link: [https://github.com/yourusername/taskify](https://github.com/yourusername/taskify)
+Project Link: [https://github.com/Nasruddin554/Taskify](https://github.com/Nasruddin554/Taskify)
