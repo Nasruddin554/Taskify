@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Task, TaskPriority, TaskStatus } from '@/types';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface TaskContextType {
   tasks: Task[];
@@ -16,100 +18,137 @@ interface TaskContextType {
   getOverdueTasks: () => Task[];
 }
 
-// Sample tasks for demo
-const mockTasks: Task[] = [
-  {
-    id: "1",
-    title: "Design new dashboard layout",
-    description: "Create wireframes and mockups for the new dashboard interface",
-    createdAt: "2023-04-01T10:00:00Z",
-    updatedAt: "2023-04-01T10:00:00Z",
-    dueDate: "2023-04-10T23:59:59Z",
-    priority: "high",
-    status: "in-progress",
-    createdBy: "1", // John Doe
-    assignedTo: "2" // Jane Doe
-  },
-  {
-    id: "2",
-    title: "Implement authentication system",
-    description: "Add login, register and password reset functionality",
-    createdAt: "2023-04-02T09:30:00Z",
-    updatedAt: "2023-04-02T09:30:00Z",
-    dueDate: "2023-04-09T23:59:59Z",
-    priority: "high",
-    status: "todo",
-    createdBy: "1", // John Doe
-    assignedTo: "3" // Mike Brown
-  },
-  {
-    id: "3",
-    title: "Fix navigation responsive issues",
-    description: "Ensure the navigation menu works correctly on mobile devices",
-    createdAt: "2023-04-03T14:15:00Z",
-    updatedAt: "2023-04-03T14:15:00Z",
-    dueDate: "2023-04-05T23:59:59Z",
-    priority: "medium",
-    status: "review",
-    createdBy: "2", // Jane Doe
-    assignedTo: "1" // John Doe
-  },
-  {
-    id: "4",
-    title: "Update API documentation",
-    description: "Document all new endpoints and update existing documentation",
-    createdAt: "2023-04-04T11:45:00Z",
-    updatedAt: "2023-04-04T11:45:00Z",
-    dueDate: "2023-04-14T23:59:59Z",
-    priority: "low",
-    status: "todo",
-    createdBy: "3", // Mike Brown
-    assignedTo: "2" // Jane Doe
-  }
-];
-
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
 export const TaskProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // Load tasks from localStorage or use mock data
-    const storedTasks = localStorage.getItem('taskify-tasks');
-    if (storedTasks) {
-      setTasks(JSON.parse(storedTasks));
-    } else {
-      // Use mock tasks for demo
-      setTasks(mockTasks);
-      localStorage.setItem('taskify-tasks', JSON.stringify(mockTasks));
-    }
-    setIsLoading(false);
-  }, []);
+  // Fetch tasks from Supabase
+  const fetchTasks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('due_date', { ascending: true });
 
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    if (tasks.length > 0) {
-      localStorage.setItem('taskify-tasks', JSON.stringify(tasks));
+      if (error) {
+        throw error;
+      }
+      
+      // Convert snake_case to camelCase
+      const formattedTasks = data.map((task): Task => ({
+        id: task.id,
+        title: task.title,
+        description: task.description || '',
+        createdAt: task.created_at,
+        updatedAt: task.updated_at,
+        dueDate: task.due_date || new Date().toISOString(),
+        priority: (task.priority as TaskPriority) || 'medium',
+        status: (task.status as TaskStatus) || 'todo',
+        createdBy: task.created_by,
+        assignedTo: task.assigned_to,
+      }));
+      
+      return formattedTasks;
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      toast({
+        title: 'Error fetching tasks',
+        description: 'Please try again later.',
+        variant: 'destructive',
+      });
+      return [];
     }
-  }, [tasks]);
+  };
+
+  // Use React Query to manage tasks data
+  const { data: fetchedTasks, isLoading: isFetchingTasks } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: fetchTasks,
+    enabled: !!user, // Only fetch tasks when user is authenticated
+  });
+
+  // Update local tasks state when fetchedTasks changes
+  useEffect(() => {
+    if (fetchedTasks) {
+      setTasks(fetchedTasks);
+      setIsLoading(false);
+    }
+  }, [fetchedTasks]);
+
+  // Mutations for task operations
+  const createTaskMutation = useMutation({
+    mutationFn: async (taskData: {
+      title: string;
+      description: string;
+      due_date: string;
+      priority: TaskPriority;
+      status: TaskStatus;
+      created_by: string;
+      assigned_to?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert(taskData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { error } = await supabase
+        .from('tasks')
+        .update(data)
+        .eq('id', id);
+
+      if (error) throw error;
+      return { id, ...data };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    },
+  });
 
   const createTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
     if (!user) return;
-    
-    const now = new Date().toISOString();
-    const newTask: Task = {
-      id: `${Date.now()}`,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: user.id,
-      ...taskData
-    };
 
-    setTasks(prev => [...prev, newTask]);
-    
+    // Convert to snake_case for the database
+    createTaskMutation.mutate({
+      title: taskData.title,
+      description: taskData.description,
+      due_date: taskData.dueDate,
+      priority: taskData.priority,
+      status: taskData.status,
+      created_by: user.id,
+      assigned_to: taskData.assignedTo,
+    });
+
     toast({
       title: "Task created",
       description: "Your task has been created successfully."
@@ -117,6 +156,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateTask = (id: string, taskData: Partial<Task>) => {
+    // Convert to snake_case for the database
+    const dbTaskData: any = {};
+    if (taskData.title) dbTaskData.title = taskData.title;
+    if (taskData.description) dbTaskData.description = taskData.description;
+    if (taskData.dueDate) dbTaskData.due_date = taskData.dueDate;
+    if (taskData.priority) dbTaskData.priority = taskData.priority;
+    if (taskData.status) dbTaskData.status = taskData.status;
+    if ('assignedTo' in taskData) dbTaskData.assigned_to = taskData.assignedTo;
+    
+    // Update locally for optimistic UI
     setTasks(prev => prev.map(task => 
       task.id === id 
         ? { 
@@ -126,6 +175,9 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
           }
         : task
     ));
+    
+    // Update in database
+    updateTaskMutation.mutate({ id, data: dbTaskData });
 
     toast({
       title: "Task updated",
@@ -134,7 +186,11 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteTask = (id: string) => {
+    // Update locally for optimistic UI
     setTasks(prev => prev.filter(task => task.id !== id));
+    
+    // Delete from database
+    deleteTaskMutation.mutate(id);
     
     toast({
       title: "Task deleted",
@@ -166,7 +222,7 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     <TaskContext.Provider
       value={{
         tasks,
-        isLoading,
+        isLoading: isLoading || isFetchingTasks,
         createTask,
         updateTask,
         deleteTask,

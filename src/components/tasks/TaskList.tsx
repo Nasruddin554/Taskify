@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Task } from '@/types';
 import { useTask } from '@/contexts/TaskContext';
+import { useTaskRealtime } from '@/hooks/use-task-realtime';
 import TaskCard from './TaskCard';
 import TaskDialog from './TaskDialog';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,9 @@ import {
 } from "@/components/ui/sheet";
 
 export default function TaskList() {
+  // Initialize real-time subscription
+  useTaskRealtime();
+  
   const { tasks } = useTask();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
