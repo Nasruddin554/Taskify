@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 interface TaskContextType {
   tasks: Task[];
   isLoading: boolean;
+  error: Error | null;
   createTask: (taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => void;
   updateTask: (id: string, taskData: Partial<Task>) => void;
   deleteTask: (id: string) => void;
@@ -16,6 +17,7 @@ interface TaskContextType {
   getTasksByUser: (userId: string) => Task[];
   getTasksByStatus: (status: TaskStatus) => Task[];
   getOverdueTasks: () => Task[];
+  retryFetchTasks: () => void;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -24,19 +26,22 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch tasks from Supabase
   const fetchTasks = async () => {
     try {
+      console.log('Fetching tasks...');
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .order('due_date', { ascending: true });
 
       if (error) {
-        throw error;
+        console.error('Error fetching tasks:', error);
+        throw new Error(error.message);
       }
       
       // Convert snake_case to camelCase
@@ -56,29 +61,58 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       return formattedTasks;
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      toast({
-        title: 'Error fetching tasks',
-        description: 'Please try again later.',
-        variant: 'destructive',
-      });
-      return [];
+      throw error;
     }
   };
 
   // Use React Query to manage tasks data
-  const { data: fetchedTasks, isLoading: isFetchingTasks } = useQuery({
+  const { 
+    data: fetchedTasks, 
+    isLoading: isFetchingTasks, 
+    error: fetchError, 
+    refetch: refetchTasks 
+  } = useQuery({
     queryKey: ['tasks'],
     queryFn: fetchTasks,
     enabled: !!user, // Only fetch tasks when user is authenticated
+    retry: 1,
+    onError: (error) => {
+      console.error('Query error:', error);
+      toast({
+        title: "Error fetching tasks",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+      setError(error instanceof Error ? error : new Error('Failed to fetch tasks'));
+    }
   });
+
+  // Retry function for manual refetching
+  const retryFetchTasks = () => {
+    if (user) {
+      refetchTasks();
+      toast({
+        title: "Retrying...",
+        description: "Attempting to fetch your tasks again."
+      });
+    }
+  };
 
   // Update local tasks state when fetchedTasks changes
   useEffect(() => {
     if (fetchedTasks) {
       setTasks(fetchedTasks);
       setIsLoading(false);
+      setError(null);
     }
   }, [fetchedTasks]);
+
+  // Set error state when fetch error occurs
+  useEffect(() => {
+    if (fetchError) {
+      setError(fetchError instanceof Error ? fetchError : new Error('Failed to fetch tasks'));
+    }
+  }, [fetchError]);
 
   // Mutations for task operations
   const createTaskMutation = useMutation({
@@ -223,13 +257,15 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
       value={{
         tasks,
         isLoading: isLoading || isFetchingTasks,
+        error,
         createTask,
         updateTask,
         deleteTask,
         getTaskById,
         getTasksByUser,
         getTasksByStatus,
-        getOverdueTasks
+        getOverdueTasks,
+        retryFetchTasks
       }}
     >
       {children}
