@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Task, TaskPriority, TaskStatus } from '@/types';
 import { useAuth } from './AuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -76,14 +76,16 @@ export const TaskProvider = ({ children }: { children: ReactNode }) => {
     queryFn: fetchTasks,
     enabled: !!user, // Only fetch tasks when user is authenticated
     retry: 1,
-    onError: (error) => {
-      console.error('Query error:', error);
-      toast({
-        title: "Error fetching tasks",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-      setError(error instanceof Error ? error : new Error('Failed to fetch tasks'));
+    meta: {
+      onError: (error: Error) => {
+        console.error('Query error:', error);
+        toast({
+          title: "Error fetching tasks",
+          description: "Please try again later.",
+          variant: "destructive",
+        });
+        setError(error instanceof Error ? error : new Error('Failed to fetch tasks'));
+      }
     }
   });
 
