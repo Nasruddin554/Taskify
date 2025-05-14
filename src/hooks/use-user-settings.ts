@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export function useUserSettings() {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,15 +28,6 @@ export function useUserSettings() {
         .eq('id', user.id);
 
       if (error) throw error;
-
-      // Update the user context
-      if (updateUser && user) {
-        updateUser({
-          ...user,
-          name: data.name || user.name,
-          email: data.email || user.email,
-        });
-      }
 
       toast({
         title: "Profile updated",

@@ -7,10 +7,18 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface NotificationSettings {
+  taskAssignments: boolean;
+  taskUpdates: boolean;
+  taskCompletions: boolean;
+  reminders: boolean;
+  emailNotifications: boolean;
+}
+
 export default function NotificationsForm() {
   const { user } = useAuth();
   const { updateNotificationSettings, isSubmitting } = useUserSettings();
-  const [notificationSettings, setNotificationSettings] = useState({
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
     taskAssignments: true,
     taskUpdates: true,
     taskCompletions: true,
@@ -31,7 +39,15 @@ export default function NotificationsForm() {
           if (error) throw error;
           
           if (data?.notification_settings) {
-            setNotificationSettings(data.notification_settings);
+            // Ensure we're parsing the JSON correctly and it has all required properties
+            const settings = data.notification_settings as NotificationSettings;
+            setNotificationSettings({
+              taskAssignments: Boolean(settings.taskAssignments),
+              taskUpdates: Boolean(settings.taskUpdates),
+              taskCompletions: Boolean(settings.taskCompletions),
+              reminders: Boolean(settings.reminders),
+              emailNotifications: Boolean(settings.emailNotifications),
+            });
           }
         } catch (err) {
           console.error('Error fetching notification settings:', err);

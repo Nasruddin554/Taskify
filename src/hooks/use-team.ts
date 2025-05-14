@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 
-export interface TeamMember extends User {
+export interface TeamMember extends Omit<User, 'role'> {
   joinedAt: string;
   teamRole: string;
+  lastActive?: string;
+  role: string; // This will be the user's role, not necessarily the team role
 }
 
 export function useTeam() {
@@ -49,8 +51,12 @@ export function useTeam() {
         role: profile.role || 'user',
         avatar: profile.avatar,
         lastActive: profile.last_active,
-        joinedAt: profile.team_members?.[0]?.joined_at || new Date().toISOString(),
-        teamRole: profile.team_members?.[0]?.role || 'member'
+        joinedAt: profile.team_members && profile.team_members[0] 
+          ? profile.team_members[0].joined_at 
+          : new Date().toISOString(),
+        teamRole: profile.team_members && profile.team_members[0] 
+          ? profile.team_members[0].role 
+          : 'member'
       }));
       
       setTeam(teamMembers);
