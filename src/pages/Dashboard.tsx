@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/TaskContext';
@@ -12,12 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { RefreshCcw, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { tasks, error, retryFetchTasks } = useTask();
+  const { tasks } = useTask();
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | undefined>(undefined);
   
@@ -71,41 +68,6 @@ export default function Dashboard() {
       return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
     })
     .slice(0, 5);
-
-  if (error) {
-    return (
-      <AppLayout>
-        <DashboardHeader onCreateTask={handleCreateTask} />
-        
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error loading tasks</AlertTitle>
-          <AlertDescription>
-            We encountered a problem while fetching your tasks. This might be due to a database issue.
-          </AlertDescription>
-          <div className="mt-4">
-            <Button onClick={retryFetchTasks} variant="outline" className="flex items-center gap-2">
-              <RefreshCcw className="h-4 w-4" />
-              Retry
-            </Button>
-          </div>
-        </Alert>
-        
-        {/* Show empty states for the task sections */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Tasks Due Soon</CardTitle>
-            <CardDescription>Unable to load tasks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-8">
-              Retry loading tasks to see your upcoming work
-            </p>
-          </CardContent>
-        </Card>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout>
