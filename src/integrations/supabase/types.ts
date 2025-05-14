@@ -57,24 +57,36 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string | null
+          bio: string | null
           email: string | null
           id: string
+          last_active: string | null
           name: string | null
+          notification_settings: Json | null
           role: string | null
+          theme_preference: string | null
         }
         Insert: {
           avatar?: string | null
+          bio?: string | null
           email?: string | null
           id: string
+          last_active?: string | null
           name?: string | null
+          notification_settings?: Json | null
           role?: string | null
+          theme_preference?: string | null
         }
         Update: {
           avatar?: string | null
+          bio?: string | null
           email?: string | null
           id?: string
+          last_active?: string | null
           name?: string | null
+          notification_settings?: Json | null
           role?: string | null
+          theme_preference?: string | null
         }
         Relationships: []
       }

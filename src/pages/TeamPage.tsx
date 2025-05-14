@@ -1,28 +1,21 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/TaskContext';
+import { useTeam, TeamMember } from '@/hooks/use-team';
 import AppLayout from '@/components/layout/AppLayout';
-import UserAvatar from '@/components/dashboard/UserAvatar';
-import { User } from '@/types';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import TeamMemberCard from '@/components/team/TeamMemberCard';
+import { SkeletonTeamCard } from '@/components/ui/skeleton-card';
+import { Input } from "@/components/ui/input";
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { 
-  Clock, 
-  Mail, 
   UserPlus, 
   Users, 
-  MessagesSquare,
-  MessageSquarePlus 
+  Clock,
+  Search,
+  Filter,
+  RefreshCcw,
+  Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,61 +26,46 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-
-// Mock team members for demo
-const teamMembers: User[] = [
-  {
-    id: "1",
-    email: "johndoe@example.com",
-    name: "John Doe",
-    role: "admin",
-    avatar: "https://i.pravatar.cc/150?u=johndoe@example.com"
-  },
-  {
-    id: "2",
-    email: "janedoe@example.com",
-    name: "Jane Doe",
-    role: "manager",
-    avatar: "https://i.pravatar.cc/150?u=janedoe@example.com"
-  },
-  {
-    id: "3",
-    email: "mikebrown@example.com",
-    name: "Mike Brown",
-    role: "user",
-    avatar: "https://i.pravatar.cc/150?u=mikebrown@example.com"
-  },
-  {
-    id: "4",
-    email: "sarahjohnson@example.com",
-    name: "Sarah Johnson",
-    role: "user",
-    avatar: "https://i.pravatar.cc/150?u=sarahjohnson@example.com"
-  },
-  {
-    id: "5",
-    email: "alexwilliams@example.com",
-    name: "Alex Williams",
-    role: "user",
-    avatar: "https://i.pravatar.cc/150?u=alexwilliams@example.com"
-  }
-];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function TeamPage() {
   const { tasks } = useTask();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { team, isLoading, error, fetchTeamMembers, inviteMember } = useTeam();
   
-  // For a real app, we would fetch this data from an API
-  const [team, setTeam] = useState<User[]>(teamMembers);
+  // UI state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<User | null>(null);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  
+  // Form state
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('user');
+  const [inviteMessage, setInviteMessage] = useState('');
   const [message, setMessage] = useState('');
 
   const getTaskStats = (userId: string) => {
@@ -111,7 +89,7 @@ export default function TeamPage() {
     };
   };
 
-  const handleInviteMember = () => {
+  const handleInviteMember = async () => {
     if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
       toast({
         title: "Invalid email",
@@ -121,14 +99,13 @@ export default function TeamPage() {
       return;
     }
 
-    // In a real app, this would call an API to send an invitation
-    toast({
-      title: "Invitation sent",
-      description: `An invitation has been sent to ${inviteEmail}`,
-    });
-    
-    setInviteEmail('');
-    setIsInviteDialogOpen(false);
+    const success = await inviteMember(inviteEmail, inviteRole);
+    if (success) {
+      setInviteEmail('');
+      setInviteRole('user');
+      setInviteMessage('');
+      setIsInviteDialogOpen(false);
+    }
   };
 
   const handleSendMessage = () => {
@@ -141,7 +118,6 @@ export default function TeamPage() {
       return;
     }
 
-    // In a real app, this would call an API to send a message
     toast({
       title: "Message sent",
       description: `Message sent to ${selectedMember.name}`,
@@ -152,9 +128,52 @@ export default function TeamPage() {
     setSelectedMember(null);
   };
 
-  const openMessageDialog = (member: User) => {
+  const openMessageDialog = (member: TeamMember) => {
     setSelectedMember(member);
     setIsMessageDialogOpen(true);
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchTeamMembers();
+    setIsRefreshing(false);
+    toast({
+      title: "Team refreshed",
+      description: "Team data has been updated",
+    });
+  };
+
+  // Filter and sort team members
+  const filteredTeam = team
+    .filter(member => {
+      // Filter by search query
+      const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          member.email.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Filter by role
+      const matchesRole = selectedRole === 'all' || member.role === selectedRole;
+      
+      return matchesSearch && matchesRole;
+    })
+    .sort((a, b) => {
+      // Sort by different properties
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'role':
+          return a.role.localeCompare(b.role);
+        case 'completion':
+          return getTaskStats(b.id).completionRate - getTaskStats(a.id).completionRate;
+        default:
+          return 0;
+      }
+    });
+
+  // Render skeleton loaders during loading state
+  const renderSkeletons = () => {
+    return Array(5).fill(0).map((_, index) => (
+      <SkeletonTeamCard key={`skeleton-${index}`} />
+    ));
   };
 
   return (
@@ -203,92 +222,148 @@ export default function TeamPage() {
             </div>
           </div>
         </div>
+        
+        {/* Filters and search */}
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search team members..." 
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by role</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setSelectedRole('all')}
+                  className={selectedRole === 'all' ? 'bg-muted' : ''}
+                >
+                  All Roles
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedRole('admin')}
+                  className={selectedRole === 'admin' ? 'bg-muted' : ''}
+                >
+                  Admin
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedRole('manager')}
+                  className={selectedRole === 'manager' ? 'bg-muted' : ''}
+                >
+                  Manager
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSelectedRole('user')}
+                  className={selectedRole === 'user' ? 'bg-muted' : ''}
+                >
+                  User
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  Sort
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setSortBy('name')}
+                  className={sortBy === 'name' ? 'bg-muted' : ''}
+                >
+                  Name
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSortBy('role')}
+                  className={sortBy === 'role' ? 'bg-muted' : ''}
+                >
+                  Role
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setSortBy('completion')}
+                  className={sortBy === 'completion' ? 'bg-muted' : ''}
+                >
+                  Task Completion
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="shrink-0" 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
       
+      {error && (
+        <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg">
+          <p className="font-medium">{error}</p>
+          <p className="text-sm mt-1">Please try refreshing the page or contact support if the problem persists.</p>
+        </div>
+      )}
+      
+      {/* Team grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {team.map((member) => {
-          const stats = getTaskStats(member.id);
-          
-          return (
-            <Card key={member.id} className="flex flex-col h-full">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <UserAvatar user={member} className="h-10 w-10" />
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg truncate">{member.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-1 text-xs">
-                      <Mail className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{member.email}</span>
-                    </CardDescription>
-                  </div>
-                </div>
-                <Badge 
-                  variant="outline"
-                  className="capitalize absolute top-4 right-4"
-                >
-                  {member.role}
-                </Badge>
-              </CardHeader>
-              
-              <CardContent className="flex-grow">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Task Completion</span>
-                      <span className="font-medium">{stats.completionRate}%</span>
-                    </div>
-                    <Progress value={stats.completionRate} className="h-2" />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-muted/50 p-3 rounded-lg">
-                      <div className="text-xl font-bold">{stats.total}</div>
-                      <div className="text-xs text-muted-foreground">Total Tasks</div>
-                    </div>
-                    
-                    <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
-                      <div className="text-xl font-bold text-green-600 dark:text-green-400">{stats.completed}</div>
-                      <div className="text-xs text-muted-foreground">Completed</div>
-                    </div>
-                    
-                    <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
-                      <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</div>
-                      <div className="text-xs text-muted-foreground">In Progress</div>
-                    </div>
-                    
-                    <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg">
-                      <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{stats.review}</div>
-                      <div className="text-xs text-muted-foreground">In Review</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-              
-              <CardFooter className="pt-3 mt-auto flex flex-col sm:flex-row gap-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => openMessageDialog(member)}
-                >
-                  <MessagesSquare className="h-4 w-4 mr-2" />
-                  Message
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  className="w-full"
-                  onClick={() => {
-                    toast({
-                      title: "Profile viewed",
-                      description: `Viewing ${member.name}'s detailed profile`
-                    });
-                  }}
-                >
-                  View Details
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
+        {isLoading ? (
+          renderSkeletons()
+        ) : filteredTeam.length > 0 ? (
+          filteredTeam.map((member) => (
+            <TeamMemberCard
+              key={member.id}
+              member={member}
+              stats={getTaskStats(member.id)}
+              onMessageClick={openMessageDialog}
+              onViewDetailsClick={() => {
+                toast({
+                  title: "Profile viewed",
+                  description: `Viewing ${member.name}'s detailed profile`
+                });
+              }}
+            />
+          ))
+        ) : (
+          <div className="col-span-full p-10 text-center bg-muted/40 rounded-lg">
+            <p className="text-muted-foreground">No team members found matching your filters.</p>
+            {searchQuery || selectedRole !== 'all' ? (
+              <Button 
+                variant="link" 
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedRole('all');
+                }}
+              >
+                Clear filters
+              </Button>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Invite Member Dialog */}
@@ -313,15 +388,19 @@ export default function TeamPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <select 
-                id="role"
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                defaultValue="user"
-              >
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="user">User</option>
-              </select>
+              <Select value={inviteRole} onValueChange={setInviteRole}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Role</SelectLabel>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="message">Personal message (optional)</Label>
@@ -329,6 +408,8 @@ export default function TeamPage() {
                 id="message"
                 placeholder="I'd like to invite you to join our team..."
                 className="resize-none"
+                value={inviteMessage}
+                onChange={(e) => setInviteMessage(e.target.value)}
               />
             </div>
           </div>
@@ -355,7 +436,10 @@ export default function TeamPage() {
           <div className="space-y-4 py-4">
             {selectedMember && (
               <div className="flex items-center gap-3 p-3 bg-muted rounded-md">
-                <UserAvatar user={selectedMember} className="h-10 w-10" />
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
+                  <AvatarFallback>{selectedMember.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
                 <div>
                   <div className="font-medium">{selectedMember.name}</div>
                   <div className="text-sm text-muted-foreground">{selectedMember.email}</div>
@@ -378,13 +462,11 @@ export default function TeamPage() {
               Cancel
             </Button>
             <Button onClick={handleSendMessage}>
-              <MessageSquarePlus className="h-4 w-4 mr-2" />
               Send Message
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </AppLayout>
   );
 }
