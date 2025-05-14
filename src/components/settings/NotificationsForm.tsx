@@ -39,14 +39,14 @@ export default function NotificationsForm() {
           if (error) throw error;
           
           if (data?.notification_settings) {
-            // Ensure we're parsing the JSON correctly and it has all required properties
-            const settings = data.notification_settings as NotificationSettings;
+            // Safely parse the settings with explicit type casting and defaults
+            const settings = data.notification_settings as Record<string, boolean>;
             setNotificationSettings({
-              taskAssignments: Boolean(settings.taskAssignments),
-              taskUpdates: Boolean(settings.taskUpdates),
-              taskCompletions: Boolean(settings.taskCompletions),
-              reminders: Boolean(settings.reminders),
-              emailNotifications: Boolean(settings.emailNotifications),
+              taskAssignments: settings.taskAssignments ?? true,
+              taskUpdates: settings.taskUpdates ?? true,
+              taskCompletions: settings.taskCompletions ?? true,
+              reminders: settings.reminders ?? true,
+              emailNotifications: settings.emailNotifications ?? false,
             });
           }
         } catch (err) {
@@ -59,7 +59,15 @@ export default function NotificationsForm() {
   }, [user]);
 
   const handleSaveSettings = async () => {
-    await updateNotificationSettings(notificationSettings);
+    // Convert to Record<string, boolean> explicitly to match the expected type
+    const settingsRecord: Record<string, boolean> = {
+      taskAssignments: notificationSettings.taskAssignments,
+      taskUpdates: notificationSettings.taskUpdates,
+      taskCompletions: notificationSettings.taskCompletions,
+      reminders: notificationSettings.reminders,
+      emailNotifications: notificationSettings.emailNotifications
+    };
+    await updateNotificationSettings(settingsRecord);
   };
 
   return (

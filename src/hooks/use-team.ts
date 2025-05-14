@@ -44,20 +44,23 @@ export function useTeam() {
       }
 
       // Transform the data to match our TeamMember interface
-      const teamMembers = data.map(profile => ({
-        id: profile.id,
-        name: profile.name || 'Unknown',
-        email: profile.email || '',
-        role: profile.role || 'user',
-        avatar: profile.avatar,
-        lastActive: profile.last_active,
-        joinedAt: profile.team_members && profile.team_members[0] 
-          ? profile.team_members[0].joined_at 
-          : new Date().toISOString(),
-        teamRole: profile.team_members && profile.team_members[0] 
-          ? profile.team_members[0].role 
-          : 'member'
-      }));
+      const teamMembers = data.map(profile => {
+        // Handle potentially missing team_members array
+        const teamMember = profile.team_members && Array.isArray(profile.team_members) && profile.team_members.length > 0 
+          ? profile.team_members[0] 
+          : null;
+
+        return {
+          id: profile.id,
+          name: profile.name || 'Unknown',
+          email: profile.email || '',
+          role: profile.role || 'user',
+          avatar: profile.avatar,
+          lastActive: profile.last_active,
+          joinedAt: teamMember ? teamMember.joined_at : new Date().toISOString(),
+          teamRole: teamMember ? teamMember.role : 'member'
+        };
+      });
       
       setTeam(teamMembers);
     } catch (err) {
