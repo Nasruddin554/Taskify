@@ -13,6 +13,7 @@ interface NotificationSettings {
   taskCompletions: boolean;
   reminders: boolean;
   emailNotifications: boolean;
+  [key: string]: boolean; // Index signature to allow use as Record<string, boolean>
 }
 
 export default function NotificationsForm() {
@@ -59,15 +60,8 @@ export default function NotificationsForm() {
   }, [user]);
 
   const handleSaveSettings = async () => {
-    // Convert to Record<string, boolean> explicitly to match the expected type
-    const settingsRecord: Record<string, boolean> = {
-      taskAssignments: notificationSettings.taskAssignments,
-      taskUpdates: notificationSettings.taskUpdates,
-      taskCompletions: notificationSettings.taskCompletions,
-      reminders: notificationSettings.reminders,
-      emailNotifications: notificationSettings.emailNotifications
-    };
-    await updateNotificationSettings(settingsRecord);
+    // NotificationSettings has index signature so it can be used directly
+    await updateNotificationSettings(notificationSettings);
   };
 
   return (

@@ -8,7 +8,7 @@ export interface TeamMember extends Omit<User, 'role'> {
   joinedAt: string;
   teamRole: string;
   lastActive?: string;
-  role: string; // This will be the user's role, not necessarily the team role
+  role: UserRole; // This will be the user's role as UserRole type
 }
 
 export function useTeam() {
@@ -44,17 +44,19 @@ export function useTeam() {
       }
 
       // Transform the data to match our TeamMember interface
-      const teamMembers = data.map(profile => {
+      const teamMembers: TeamMember[] = data.map(profile => {
         // Handle potentially missing team_members array
-        const teamMember = profile.team_members && Array.isArray(profile.team_members) && profile.team_members.length > 0 
-          ? profile.team_members[0] 
-          : null;
+        const teamMember = profile.team_members && 
+          Array.isArray(profile.team_members) && 
+          profile.team_members.length > 0 
+            ? profile.team_members[0] 
+            : null;
 
         return {
           id: profile.id,
           name: profile.name || 'Unknown',
           email: profile.email || '',
-          role: profile.role || 'user',
+          role: (profile.role as UserRole) || 'user',
           avatar: profile.avatar,
           lastActive: profile.last_active,
           joinedAt: teamMember ? teamMember.joined_at : new Date().toISOString(),
@@ -73,6 +75,71 @@ export function useTeam() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Implement team member removal functionality
+  const removeTeamMember = async (memberId: string) => {
+    try {
+      // Remove from team_members table
+      const { error } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('user_id', memberId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setTeam(team.filter(member => member.id !== memberId));
+      
+      toast({
+        title: "Success",
+        description: "Team member removed successfully",
+      });
+      
+      return true;
+    } catch (err) {
+      console.error('Error removing team member:', err);
+      toast({
+        title: "Error",
+        description: "Failed to remove team member. Please try again later.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  // Implement role management functionality
+  const updateMemberRole = async (memberId: string, newRole: string) => {
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ role: newRole })
+        .eq('user_id', memberId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setTeam(team.map(member => 
+        member.id === memberId 
+          ? { ...member, teamRole: newRole } 
+          : member
+      ));
+      
+      toast({
+        title: "Success",
+        description: `Role updated to ${newRole}`,
+      });
+      
+      return true;
+    } catch (err) {
+      console.error('Error updating team member role:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update role. Please try again later.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -105,5 +172,7 @@ export function useTeam() {
     error,
     fetchTeamMembers,
     inviteMember,
+    removeTeamMember,
+    updateMemberRole
   };
 }

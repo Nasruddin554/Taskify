@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/TaskContext';
@@ -14,7 +15,10 @@ import {
   Search,
   Filter,
   RefreshCcw,
-  Loader2
+  Loader2,
+  Shield,
+  UserMinus,
+  AlertTriangle
 } from 'lucide-react';
 import {
   Dialog,
@@ -44,13 +48,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Avatar, 
+  AvatarFallback, 
+  AvatarImage 
+} from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function TeamPage() {
   const { tasks } = useTask();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { team, isLoading, error, fetchTeamMembers, inviteMember } = useTeam();
+  const { 
+    team, 
+    isLoading, 
+    error, 
+    fetchTeamMembers, 
+    inviteMember,
+    removeTeamMember,
+    updateMemberRole 
+  } = useTeam();
   
   // UI state
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,6 +85,8 @@ export default function TeamPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   
   // Form state
@@ -66,7 +94,12 @@ export default function TeamPage() {
   const [inviteRole, setInviteRole] = useState('user');
   const [inviteMessage, setInviteMessage] = useState('');
   const [message, setMessage] = useState('');
+  const [newRole, setNewRole] = useState('');
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  
   const getTaskStats = (userId: string) => {
     const userTasks = tasks.filter(task => task.assignedTo === userId);
     const completedTasks = userTasks.filter(task => task.status === 'completed');
@@ -127,9 +160,41 @@ export default function TeamPage() {
     setSelectedMember(null);
   };
 
+  const handleRemoveMember = async () => {
+    if (!selectedMember) return;
+    
+    const success = await removeTeamMember(selectedMember.id);
+    if (success) {
+      setIsRemoveDialogOpen(false);
+      setSelectedMember(null);
+    }
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedMember || !newRole) return;
+    
+    const success = await updateMemberRole(selectedMember.id, newRole);
+    if (success) {
+      setIsRoleDialogOpen(false);
+      setSelectedMember(null);
+      setNewRole('');
+    }
+  };
+
   const openMessageDialog = (member: TeamMember) => {
     setSelectedMember(member);
     setIsMessageDialogOpen(true);
+  };
+
+  const openRemoveDialog = (member: TeamMember) => {
+    setSelectedMember(member);
+    setIsRemoveDialogOpen(true);
+  };
+
+  const openRoleDialog = (member: TeamMember) => {
+    setSelectedMember(member);
+    setNewRole(member.teamRole);
+    setIsRoleDialogOpen(true);
   };
 
   const handleRefresh = async () => {
@@ -168,9 +233,14 @@ export default function TeamPage() {
       }
     });
 
+  // Paginate the filtered results
+  const totalPages = Math.ceil(filteredTeam.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTeam = filteredTeam.slice(startIndex, startIndex + itemsPerPage);
+
   // Render skeleton loaders during loading state
   const renderSkeletons = () => {
-    return Array(5).fill(0).map((_, index) => (
+    return Array(itemsPerPage).fill(0).map((_, index) => (
       <SkeletonTeamCard key={`skeleton-${index}`} />
     ));
   };
@@ -332,13 +402,15 @@ export default function TeamPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {isLoading ? (
           renderSkeletons()
-        ) : filteredTeam.length > 0 ? (
-          filteredTeam.map((member) => (
+        ) : paginatedTeam.length > 0 ? (
+          paginatedTeam.map((member) => (
             <TeamMemberCard
               key={member.id}
               member={member}
               stats={getTaskStats(member.id)}
               onMessageClick={openMessageDialog}
+              onRemoveClick={openRemoveDialog}
+              onRoleClick={openRoleDialog}
               onViewDetailsClick={() => {
                 toast({
                   title: "Profile viewed",
@@ -364,6 +436,35 @@ export default function TeamPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {filteredTeam.length > itemsPerPage && (
+        <div className="flex justify-center mt-6">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            
+            <div className="text-sm px-2">
+              Page {currentPage} of {totalPages}
+            </div>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Invite Member Dialog */}
       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
@@ -462,6 +563,89 @@ export default function TeamPage() {
             </Button>
             <Button onClick={handleSendMessage}>
               Send Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove Member Dialog */}
+      <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedMember && 
+                `Are you sure you want to remove ${selectedMember.name} from the team? 
+                This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleRemoveMember}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <UserMinus className="w-4 h-4 mr-2" />
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Update Role Dialog */}
+      <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Team Role</DialogTitle>
+            <DialogDescription>
+              {selectedMember && `Update ${selectedMember.name}'s role in the team`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedMember && (
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-md">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
+                  <AvatarFallback>{selectedMember.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-medium">{selectedMember.name}</div>
+                  <div className="text-sm text-muted-foreground">Current role: {selectedMember.teamRole}</div>
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="new-role">New Role</Label>
+              <Select value={newRole} onValueChange={setNewRole}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Role</SelectLabel>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="member">Member</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              {newRole === 'admin' && (
+                <div className="flex items-center mt-2 p-2 border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 rounded text-sm">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-500 mr-2 flex-shrink-0" />
+                  <span className="text-yellow-800 dark:text-yellow-400">
+                    Admin users have full access to all team settings and data.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateRole} className="gap-2">
+              <Shield className="h-4 w-4" />
+              Update Role
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,14 +1,13 @@
 
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from '@/components/ui/progress';
-import { MessagesSquare, User } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { TeamMember } from '@/hooks/use-team';
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from 'date-fns';
+import { TeamMember } from "@/hooks/use-team";
+import { MessageSquare, UserMinus, Shield } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TeamMemberCardProps {
   member: TeamMember;
@@ -16,142 +15,155 @@ interface TeamMemberCardProps {
     total: number;
     completed: number;
     inProgress: number;
-    review: number;
     todo: number;
+    review: number;
     completionRate: number;
   };
-  onMessageClick: (member: TeamMember) => void;
-  onViewDetailsClick: (member: TeamMember) => void;
+  onMessageClick?: (member: TeamMember) => void;
+  onRemoveClick?: (member: TeamMember) => void;
+  onRoleClick?: (member: TeamMember) => void;
+  onViewDetailsClick?: () => void;
 }
 
-export default function TeamMemberCard({ 
-  member, 
-  stats, 
+export default function TeamMemberCard({
+  member,
+  stats,
   onMessageClick,
-  onViewDetailsClick 
+  onRemoveClick,
+  onRoleClick,
+  onViewDetailsClick
 }: TeamMemberCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'default'; // Primary color
+      case 'manager':
+        return 'outline'; // Secondary color
+      default:
+        return 'secondary'; // Muted color
+    }
   };
-  
-  const getLastActiveText = (lastActive: string | undefined) => {
-    if (!lastActive) return "Never active";
+
+  const getTimeStatus = () => {
+    if (!member.lastActive) return null;
     
     try {
-      const lastActiveDate = new Date(lastActive);
-      return `Last active: ${format(lastActiveDate, 'MMM d, h:mm a')}`;
-    } catch (e) {
-      return "Last active: Unknown";
+      const lastActive = new Date(member.lastActive);
+      const timeAgo = formatDistanceToNow(lastActive, { addSuffix: true });
+      return `Active ${timeAgo}`;
+    } catch (error) {
+      return null;
     }
   };
 
   return (
-    <Card 
-      className={`flex flex-col h-full transition-all duration-200 ${
-        isHovered ? 'shadow-md translate-y-[-4px]' : ''
-      }`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex flex-col md:flex-row gap-4 items-center md:items-start text-center md:text-left">
+          <Avatar className="w-16 h-16">
             <AvatarImage src={member.avatar} alt={member.name} />
-            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+            <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{member.name}</CardTitle>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <p className="truncate">{member.email}</p>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{getLastActiveText(member.lastActive)}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          <div className="space-y-1 flex-1">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-between">
+              <h3 className="font-semibold text-lg">{member.name}</h3>
+              <Badge variant={getRoleBadgeVariant(member.role)} className="md:self-start">
+                {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+              </Badge>
             </div>
+            <p className="text-sm text-muted-foreground">{member.email}</p>
+            {member.teamRole && member.teamRole !== member.role && (
+              <Badge variant="outline" className="bg-primary/10">
+                Team: {member.teamRole}
+              </Badge>
+            )}
+            {getTimeStatus() && (
+              <p className="text-xs text-muted-foreground">{getTimeStatus()}</p>
+            )}
           </div>
         </div>
-        <Badge 
-          variant="outline"
-          className="capitalize absolute top-4 right-4"
-        >
-          {member.role}
-        </Badge>
-      </CardHeader>
-      
-      <CardContent className="flex-grow">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
+
+        <div className="mt-4 space-y-3">
+          <div>
+            <div className="flex justify-between text-sm mb-1">
               <span>Task Completion</span>
-              <span className={`font-medium ${stats.completionRate > 70 ? 'text-green-600 dark:text-green-400' : 
-                stats.completionRate > 30 ? 'text-amber-600 dark:text-amber-400' : 
-                'text-red-600 dark:text-red-400'}`}
-              >
-                {stats.completionRate}%
-              </span>
+              <span className="font-medium">{stats.completionRate}%</span>
             </div>
             <Progress 
               value={stats.completionRate} 
-              className="h-2" 
-              indicatorClassName={stats.completionRate > 70 ? 'bg-green-600 dark:bg-green-400' : 
-                stats.completionRate > 30 ? 'bg-amber-600 dark:bg-amber-400' : 
-                'bg-red-600 dark:bg-red-400'} 
+              className="h-2"
+              // Add custom color classes based on completion rate
+              indicatorClassName={cn(
+                stats.completionRate < 30 ? "bg-red-500" : 
+                stats.completionRate < 70 ? "bg-yellow-500" : 
+                "bg-green-500"
+              )}
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <div className="text-xl font-bold">{stats.total}</div>
-              <div className="text-xs text-muted-foreground">Total Tasks</div>
+          <div className="flex justify-between text-sm">
+            <span>Total Tasks: {stats.total}</span>
+            <span>Completed: {stats.completed}</span>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            <div className="bg-muted p-2 rounded text-center">
+              <div className="text-lg font-semibold">{stats.todo}</div>
+              <div className="text-xs text-muted-foreground">Todo</div>
             </div>
-            
-            <div className="bg-green-50 dark:bg-green-950/20 p-3 rounded-lg">
-              <div className="text-xl font-bold text-green-600 dark:text-green-400">{stats.completed}</div>
-              <div className="text-xs text-muted-foreground">Completed</div>
-            </div>
-            
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
-              <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{stats.inProgress}</div>
+            <div className="bg-muted p-2 rounded text-center">
+              <div className="text-lg font-semibold">{stats.inProgress}</div>
               <div className="text-xs text-muted-foreground">In Progress</div>
             </div>
-            
-            <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded-lg">
-              <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{stats.review}</div>
-              <div className="text-xs text-muted-foreground">In Review</div>
+            <div className="bg-muted p-2 rounded text-center">
+              <div className="text-lg font-semibold">{stats.review}</div>
+              <div className="text-xs text-muted-foreground">Review</div>
             </div>
           </div>
         </div>
       </CardContent>
-      
-      <CardFooter className="pt-3 mt-auto flex flex-col sm:flex-row gap-2">
+
+      <CardFooter className="flex flex-wrap gap-2 justify-between">
         <Button 
           variant="outline" 
-          className="w-full"
-          onClick={() => onMessageClick(member)}
+          size="sm" 
+          onClick={onViewDetailsClick}
         >
-          <MessagesSquare className="h-4 w-4 mr-2" />
-          Message
-        </Button>
-        <Button 
-          variant="secondary" 
-          className="w-full"
-          onClick={() => onViewDetailsClick(member)}
-        >
-          <User className="h-4 w-4 mr-2" />
           View Details
         </Button>
+        <div className="flex gap-2">
+          {onRoleClick && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => onRoleClick(member)}
+              title="Manage Role"
+            >
+              <Shield className="h-4 w-4" />
+            </Button>
+          )}
+          {onMessageClick && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => onMessageClick(member)}
+              title="Send Message"
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+          )}
+          {onRemoveClick && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => onRemoveClick(member)}
+              title="Remove Member"
+            >
+              <UserMinus className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

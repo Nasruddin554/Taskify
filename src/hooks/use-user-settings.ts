@@ -13,6 +13,7 @@ export function useUserSettings() {
     name?: string;
     email?: string;
     bio?: string;
+    avatar?: string;
   }) => {
     if (!user) return false;
     
@@ -24,6 +25,7 @@ export function useUserSettings() {
           name: data.name,
           email: data.email,
           bio: data.bio,
+          avatar: data.avatar,
           last_active: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -120,6 +122,10 @@ export function useUserSettings() {
         .eq('id', user.id);
 
       if (error) throw error;
+
+      // Apply the theme immediately to the document
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
 
       toast({
         title: "Appearance settings saved",
