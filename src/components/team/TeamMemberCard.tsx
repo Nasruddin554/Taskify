@@ -1,4 +1,4 @@
-
+import { useRef, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { TeamMember } from "@/hooks/use-team";
 import { MessageSquare, UserMinus, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useGSAP } from "@/hooks/use-gsap";
 
 interface TeamMemberCardProps {
   member: TeamMember;
@@ -23,6 +24,7 @@ interface TeamMemberCardProps {
   onRemoveClick?: (member: TeamMember) => void;
   onRoleClick?: (member: TeamMember) => void;
   onViewDetailsClick?: () => void;
+  index?: number; // For staggered animations
 }
 
 export default function TeamMemberCard({
@@ -31,8 +33,19 @@ export default function TeamMemberCard({
   onMessageClick,
   onRemoveClick,
   onRoleClick,
-  onViewDetailsClick
+  onViewDetailsClick,
+  index = 0
 }: TeamMemberCardProps) {
+  const { fadeIn } = useGSAP();
+  const cardRef = useRef<HTMLDivElement>(null);
+  
+  // Animation on mount
+  useEffect(() => {
+    if (cardRef.current) {
+      fadeIn(cardRef.current, 0.5, 0.1 * (index || 0));
+    }
+  }, [fadeIn, index]);
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'admin':
@@ -57,7 +70,7 @@ export default function TeamMemberCard({
   };
 
   return (
-    <Card>
+    <Card ref={cardRef} className="opacity-0">
       <CardContent className="pt-6">
         <div className="flex flex-col md:flex-row gap-4 items-center md:items-start text-center md:text-left">
           <Avatar className="w-16 h-16">

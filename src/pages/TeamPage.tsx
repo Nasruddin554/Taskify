@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/TaskContext';
@@ -8,6 +7,7 @@ import TeamMemberCard from '@/components/team/TeamMemberCard';
 import { SkeletonTeamCard } from '@/components/ui/skeleton-card';
 import { Input } from "@/components/ui/input";
 import { Button } from '@/components/ui/button';
+import { useGSAP } from '@/hooks/use-gsap';
 import { 
   UserPlus, 
   Users, 
@@ -68,6 +68,7 @@ export default function TeamPage() {
   const { tasks } = useTask();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { gsap, stagger, createTimeline } = useGSAP();
   const { 
     team, 
     isLoading, 
@@ -100,6 +101,44 @@ export default function TeamPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   
+  // Ref for the team grid
+  const teamGridRef = useState<HTMLDivElement | null>(null);
+  
+  // Animation for team stats
+  useEffect(() => {
+    if (!isLoading && team.length > 0) {
+      const tl = createTimeline();
+      tl.from('.team-stats-item', {
+        y: 20,
+        opacity: 0,
+        duration: 0.5,
+        stagger: 0.2,
+        ease: 'power3.out'
+      });
+    }
+  }, [isLoading, team.length, createTimeline]);
+
+  // Animation for search and filter controls
+  useEffect(() => {
+    const tl = createTimeline({ delay: 0.3 });
+    tl.from('.controls-animate', {
+      y: -20,
+      opacity: 0,
+      duration: 0.4,
+      stagger: 0.1,
+      ease: 'back.out'
+    });
+  }, [createTimeline]);
+
+  // Animation for refresh button
+  const animateRefresh = () => {
+    gsap.to('.refresh-icon', {
+      rotation: '+=360',
+      duration: 1,
+      ease: 'power1.inOut'
+    });
+  };
+
   const getTaskStats = (userId: string) => {
     const userTasks = tasks.filter(task => task.assignedTo === userId);
     const completedTasks = userTasks.filter(task => task.status === 'completed');
@@ -199,6 +238,7 @@ export default function TeamPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    animateRefresh();
     await fetchTeamMembers();
     setIsRefreshing(false);
     toast({
@@ -257,7 +297,7 @@ export default function TeamPage() {
           </div>
           <Button 
             onClick={() => setIsInviteDialogOpen(true)}
-            className="mt-4 sm:mt-0 gap-2"
+            className="mt-4 sm:mt-0 gap-2 controls-animate"
           >
             <UserPlus className="h-4 w-4" />
             Invite Member
@@ -267,7 +307,7 @@ export default function TeamPage() {
         {/* Team stats summary */}
         <div className="mt-6 p-4 bg-muted rounded-lg">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-            <div className="flex items-center gap-3 mb-3 sm:mb-0">
+            <div className="flex items-center gap-3 mb-3 sm:mb-0 team-stats-item">
               <div className="p-2 rounded-full bg-primary/10">
                 <Users className="h-5 w-5 text-primary" />
               </div>
@@ -276,7 +316,7 @@ export default function TeamPage() {
                 <div className="text-xl font-bold">{team.length} members</div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 team-stats-item">
               <div className="p-2 rounded-full bg-green-500/10">
                 <Clock className="h-5 w-5 text-green-500" />
               </div>
@@ -294,7 +334,7 @@ export default function TeamPage() {
         
         {/* Filters and search */}
         <div className="mt-6 flex flex-col sm:flex-row gap-4 items-end">
-          <div className="flex-1">
+          <div className="flex-1 controls-animate">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
@@ -307,84 +347,88 @@ export default function TeamPage() {
           </div>
           
           <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  Filter
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filter by role</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => setSelectedRole('all')}
-                  className={selectedRole === 'all' ? 'bg-muted' : ''}
-                >
-                  All Roles
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedRole('admin')}
-                  className={selectedRole === 'admin' ? 'bg-muted' : ''}
-                >
-                  Admin
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedRole('manager')}
-                  className={selectedRole === 'manager' ? 'bg-muted' : ''}
-                >
-                  Manager
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSelectedRole('user')}
-                  className={selectedRole === 'user' ? 'bg-muted' : ''}
-                >
-                  User
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="controls-animate">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filter
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Filter by role</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => setSelectedRole('all')}
+                    className={selectedRole === 'all' ? 'bg-muted' : ''}
+                  >
+                    All Roles
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSelectedRole('admin')}
+                    className={selectedRole === 'admin' ? 'bg-muted' : ''}
+                  >
+                    Admin
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSelectedRole('manager')}
+                    className={selectedRole === 'manager' ? 'bg-muted' : ''}
+                  >
+                    Manager
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSelectedRole('user')}
+                    className={selectedRole === 'user' ? 'bg-muted' : ''}
+                  >
+                    User
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  Sort
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => setSortBy('name')}
-                  className={sortBy === 'name' ? 'bg-muted' : ''}
-                >
-                  Name
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSortBy('role')}
-                  className={sortBy === 'role' ? 'bg-muted' : ''}
-                >
-                  Role
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setSortBy('completion')}
-                  className={sortBy === 'completion' ? 'bg-muted' : ''}
-                >
-                  Task Completion
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="controls-animate">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    Sort
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => setSortBy('name')}
+                    className={sortBy === 'name' ? 'bg-muted' : ''}
+                  >
+                    Name
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSortBy('role')}
+                    className={sortBy === 'role' ? 'bg-muted' : ''}
+                  >
+                    Role
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setSortBy('completion')}
+                    className={sortBy === 'completion' ? 'bg-muted' : ''}
+                  >
+                    Task Completion
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             
             <Button 
               variant="ghost" 
               size="icon" 
-              className="shrink-0" 
+              className="shrink-0 controls-animate" 
               onClick={handleRefresh}
               disabled={isRefreshing}
             >
               {isRefreshing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <RefreshCcw className="h-4 w-4" />
+                <RefreshCcw className="h-4 w-4 refresh-icon" />
               )}
             </Button>
           </div>
@@ -399,11 +443,14 @@ export default function TeamPage() {
       )}
       
       {/* Team grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      <div 
+        ref={el => teamGridRef.current = el} 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+      >
         {isLoading ? (
           renderSkeletons()
         ) : paginatedTeam.length > 0 ? (
-          paginatedTeam.map((member) => (
+          paginatedTeam.map((member, idx) => (
             <TeamMemberCard
               key={member.id}
               member={member}
@@ -417,6 +464,7 @@ export default function TeamPage() {
                   description: `Viewing ${member.name}'s detailed profile`
                 });
               }}
+              index={idx} // Add index for staggered animations
             />
           ))
         ) : (
