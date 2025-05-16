@@ -15,7 +15,7 @@ export default function TeamHeader({
   onInviteClick
 }: TeamHeaderProps) {
   return (
-    <AnimatedContainer animation="fade" delay={0.2}>
+    <AnimatedContainer animation="fade" delay={0.2} duration={0.6}>
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
@@ -24,19 +24,22 @@ export default function TeamHeader({
               View and manage your team members
             </p>
           </div>
-          <Button 
-            onClick={onInviteClick}
-            className="mt-4 sm:mt-0 gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            Invite Member
-          </Button>
+          <AnimatedContainer animation="fade" delay={0.3} duration={0.4}>
+            <Button 
+              onClick={onInviteClick}
+              className="mt-4 sm:mt-0 gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Invite Member
+            </Button>
+          </AnimatedContainer>
         </div>
 
         <AnimatedContainer 
           className="mt-6 p-4 bg-muted rounded-lg"
-          animation="fade"
+          animation="scale"
           delay={0.4}
+          duration={0.5}
         >
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <div className="flex items-center gap-3 mb-3 sm:mb-0">

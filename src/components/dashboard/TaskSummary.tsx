@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/TaskContext';
 import TaskStatusCard from './TaskStatusCard';
 import { ClipboardCheck, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AnimatedContainer } from '@/components/ui/animated-container';
 
 export default function TaskSummary() {
   const { user } = useAuth();
@@ -31,7 +32,14 @@ export default function TaskSummary() {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+    <AnimatedContainer 
+      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8"
+      animation="fade"
+      stagger={true}
+      staggerAmount={0.1}
+      delay={0.2}
+      duration={0.5}
+    >
       <TaskStatusCard
         title="Assigned to You"
         count={userTasks.length}
@@ -60,6 +68,6 @@ export default function TaskSummary() {
         icon={<CheckCircle2 className="text-green-500 h-5 w-5" />}
         description="Finished tasks"
       />
-    </div>
+    </AnimatedContainer>
   );
 }

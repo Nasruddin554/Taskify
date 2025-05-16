@@ -1,3 +1,4 @@
+
 import { useRef, useEffect } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +10,7 @@ import { TeamMember } from "@/hooks/use-team";
 import { MessageSquare, UserMinus, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGSAP } from "@/hooks/use-gsap";
+import { useInView } from "@/hooks/use-in-view";
 
 interface TeamMemberCardProps {
   member: TeamMember;
@@ -36,15 +38,34 @@ export default function TeamMemberCard({
   onViewDetailsClick,
   index = 0
 }: TeamMemberCardProps) {
-  const { fadeIn } = useGSAP();
+  const { gsap, createTimeline } = useGSAP();
   const cardRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(cardRef, 0.1, true);
   
   // Animation on mount
   useEffect(() => {
-    if (cardRef.current) {
-      fadeIn(cardRef.current, 0.5, 0.1 * (index || 0));
+    if (!cardRef.current || !inView) return;
+    
+    const tl = createTimeline();
+    
+    // Initial animation for the card
+    tl.fromTo(
+      cardRef.current,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.5, delay: 0.1 * index }
+    );
+    
+    // Animate card content after the card appears
+    if (cardRef.current.querySelector('.card-content')) {
+      tl.fromTo(
+        cardRef.current.querySelectorAll('.animate-item'),
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, stagger: 0.1, duration: 0.4, ease: "power2.out" }, 
+        "-=0.2"
+      );
     }
-  }, [fadeIn, index]);
+    
+  }, [inView, index, createTimeline]);
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -70,34 +91,34 @@ export default function TeamMemberCard({
   };
 
   return (
-    <Card ref={cardRef} className="opacity-0">
-      <CardContent className="pt-6">
+    <Card ref={cardRef} className="opacity-0 transform">
+      <CardContent className="pt-6 card-content">
         <div className="flex flex-col md:flex-row gap-4 items-center md:items-start text-center md:text-left">
-          <Avatar className="w-16 h-16">
+          <Avatar className="w-16 h-16 animate-item">
             <AvatarImage src={member.avatar} alt={member.name} />
             <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="space-y-1 flex-1">
-            <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-between">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-between animate-item">
               <h3 className="font-semibold text-lg">{member.name}</h3>
               <Badge variant={getRoleBadgeVariant(member.role)} className="md:self-start">
                 {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">{member.email}</p>
+            <p className="text-sm text-muted-foreground animate-item">{member.email}</p>
             {member.teamRole && member.teamRole !== member.role && (
-              <Badge variant="outline" className="bg-primary/10">
+              <Badge variant="outline" className="bg-primary/10 animate-item">
                 Team: {member.teamRole}
               </Badge>
             )}
             {getTimeStatus() && (
-              <p className="text-xs text-muted-foreground">{getTimeStatus()}</p>
+              <p className="text-xs text-muted-foreground animate-item">{getTimeStatus()}</p>
             )}
           </div>
         </div>
 
         <div className="mt-4 space-y-3">
-          <div>
+          <div className="animate-item">
             <div className="flex justify-between text-sm mb-1">
               <span>Task Completion</span>
               <span className="font-medium">{stats.completionRate}%</span>
@@ -114,21 +135,21 @@ export default function TeamMemberCard({
             />
           </div>
           
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-sm animate-item">
             <span>Total Tasks: {stats.total}</span>
             <span>Completed: {stats.completed}</span>
           </div>
           
           <div className="grid grid-cols-3 gap-2 mt-2">
-            <div className="bg-muted p-2 rounded text-center">
+            <div className="bg-muted p-2 rounded text-center animate-item">
               <div className="text-lg font-semibold">{stats.todo}</div>
               <div className="text-xs text-muted-foreground">Todo</div>
             </div>
-            <div className="bg-muted p-2 rounded text-center">
+            <div className="bg-muted p-2 rounded text-center animate-item">
               <div className="text-lg font-semibold">{stats.inProgress}</div>
               <div className="text-xs text-muted-foreground">In Progress</div>
             </div>
-            <div className="bg-muted p-2 rounded text-center">
+            <div className="bg-muted p-2 rounded text-center animate-item">
               <div className="text-lg font-semibold">{stats.review}</div>
               <div className="text-xs text-muted-foreground">Review</div>
             </div>
@@ -136,7 +157,7 @@ export default function TeamMemberCard({
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-wrap gap-2 justify-between">
+      <CardFooter className="flex flex-wrap gap-2 justify-between animate-item">
         <Button 
           variant="outline" 
           size="sm" 

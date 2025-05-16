@@ -20,7 +20,7 @@ export default function TaskStatusCard({
   return (
     <Card className={className}>
       <CardContent className="p-6 flex items-center gap-4">
-        <div className="bg-primary/10 p-3 rounded-full">
+        <div className="bg-primary/10 p-3 rounded-full animate-pulse-subtle">
           {icon}
         </div>
         <div className="flex-1">

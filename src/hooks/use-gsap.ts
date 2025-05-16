@@ -6,11 +6,17 @@ type GSAPTarget = string | Element | Element[] | NodeList | null;
 type GSAPVars = gsap.TweenVars;
 
 /**
- * Hook to create GSAP animations
+ * Enhanced hook to create and manage GSAP animations with proper typing and cleanup
  */
 export function useGSAP() {
   // Store both Tween and Timeline animations using a union type
   const animations = useRef<(gsap.core.Timeline | gsap.core.Tween)[]>([]);
+
+  // Register an animation to be tracked for cleanup
+  const registerAnimation = (animation: gsap.core.Timeline | gsap.core.Tween) => {
+    animations.current.push(animation);
+    return animation;
+  };
 
   // Clean up animations on unmount
   useEffect(() => {
@@ -20,6 +26,7 @@ export function useGSAP() {
           animation.kill();
         }
       });
+      animations.current = [];
     };
   }, []);
 
@@ -28,32 +35,40 @@ export function useGSAP() {
    */
   const animate = (target: GSAPTarget, vars: GSAPVars, delay: number = 0) => {
     const animation = gsap.to(target, { ...vars, delay });
-    return animation;
+    return registerAnimation(animation);
   };
 
   /**
-   * Create a fade-in animation
+   * Create a fade-in animation with optional y-offset
    */
-  const fadeIn = (target: GSAPTarget, duration: number = 0.5, delay: number = 0) => {
+  const fadeIn = (
+    target: GSAPTarget, 
+    duration: number = 0.5, 
+    delay: number = 0, 
+    yOffset: number = 20
+  ) => {
     const animation = gsap.fromTo(
       target,
-      { opacity: 0, y: 20 },
+      { opacity: 0, y: yOffset },
       { opacity: 1, y: 0, duration, delay, ease: "power3.out" }
     );
-    animations.current.push(animation);
-    return animation;
+    return registerAnimation(animation);
   };
 
   /**
-   * Create a fade-out animation
+   * Create a fade-out animation with optional y-offset
    */
-  const fadeOut = (target: GSAPTarget, duration: number = 0.5, delay: number = 0) => {
+  const fadeOut = (
+    target: GSAPTarget, 
+    duration: number = 0.5, 
+    delay: number = 0, 
+    yOffset: number = -20
+  ) => {
     const animation = gsap.to(
       target,
-      { opacity: 0, y: -20, duration, delay, ease: "power3.in" }
+      { opacity: 0, y: yOffset, duration, delay, ease: "power3.in" }
     );
-    animations.current.push(animation);
-    return animation;
+    return registerAnimation(animation);
   };
 
   /**
@@ -70,8 +85,7 @@ export function useGSAP() {
       stagger: staggerAmount,
       delay,
     });
-    animations.current.push(animation);
-    return animation;
+    return registerAnimation(animation);
   };
 
   /**
@@ -79,8 +93,57 @@ export function useGSAP() {
    */
   const createTimeline = (defaults: gsap.TimelineVars = {}) => {
     const timeline = gsap.timeline(defaults);
-    animations.current.push(timeline);
-    return timeline;
+    return registerAnimation(timeline);
+  };
+
+  /**
+   * Scroll-triggered animation
+   * Requires ScrollTrigger plugin to be loaded
+   */
+  const scrollTrigger = (target: GSAPTarget, vars: GSAPVars, scrollConfig: any) => {
+    if (!gsap.plugins?.ScrollTrigger) {
+      console.warn('ScrollTrigger plugin is not loaded. Install it with: gsap.registerPlugin(ScrollTrigger)');
+      return null;
+    }
+    
+    const animation = gsap.to(target, {
+      ...vars,
+      scrollTrigger: scrollConfig,
+    });
+    return registerAnimation(animation);
+  };
+
+  /**
+   * Create a reveal animation that shows elements as they enter the viewport
+   */
+  const reveal = (
+    target: GSAPTarget, 
+    duration: number = 0.8, 
+    delay: number = 0,
+    origin: 'left' | 'right' | 'top' | 'bottom' = 'bottom'
+  ) => {
+    // Define starting position based on origin
+    const startProps: GSAPVars = { opacity: 0 };
+    
+    if (origin === 'left') startProps.x = -50;
+    else if (origin === 'right') startProps.x = 50;
+    else if (origin === 'top') startProps.y = -30;
+    else startProps.y = 30; // bottom
+    
+    const animation = gsap.fromTo(
+      target,
+      startProps,
+      { 
+        opacity: 1, 
+        x: 0, 
+        y: 0, 
+        duration, 
+        delay,
+        ease: "power2.out" 
+      }
+    );
+    
+    return registerAnimation(animation);
   };
 
   return {
@@ -90,5 +153,8 @@ export function useGSAP() {
     fadeOut,
     stagger,
     createTimeline,
+    scrollTrigger,
+    reveal,
+    registerAnimation
   };
 }
