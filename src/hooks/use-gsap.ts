@@ -9,7 +9,8 @@ type GSAPVars = gsap.TweenVars;
  * Hook to create GSAP animations
  */
 export function useGSAP() {
-  const animations = useRef<gsap.Timeline[]>([]);
+  // Changed Timeline to timeline (lowercase)
+  const animations = useRef<gsap.core.Timeline[]>([]);
 
   // Clean up animations on unmount
   useEffect(() => {

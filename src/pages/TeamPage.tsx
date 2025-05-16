@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/TaskContext';
 import { useTeam, TeamMember } from '@/hooks/use-team';
@@ -102,7 +102,7 @@ export default function TeamPage() {
   const itemsPerPage = 6;
   
   // Ref for the team grid
-  const teamGridRef = useState<HTMLDivElement | null>(null);
+  const teamGridRef = useRef<HTMLDivElement>(null);
   
   // Animation for team stats
   useEffect(() => {
@@ -444,7 +444,7 @@ export default function TeamPage() {
       
       {/* Team grid */}
       <div 
-        ref={el => teamGridRef.current = el} 
+        ref={teamGridRef} 
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
       >
         {isLoading ? (
