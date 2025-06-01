@@ -35,8 +35,6 @@ export default function TaskSummary() {
     <AnimatedContainer 
       className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8"
       animation="fade"
-      stagger={true}
-      staggerAmount={0.1}
       delay={0.2}
       duration={0.5}
     >
