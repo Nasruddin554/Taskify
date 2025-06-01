@@ -29,10 +29,11 @@ export function ThemeToggle() {
   };
 
   const applyTheme = (theme: 'light' | 'dark') => {
+    const root = document.documentElement;
     if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
     }
   };
 

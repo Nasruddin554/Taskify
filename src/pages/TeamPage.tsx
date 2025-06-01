@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import TeamMemberCard from '@/components/team/TeamMemberCard';
 import TeamHeader from '@/components/team/TeamHeader';
 import { AnimatedContainer } from '@/components/ui/animated-container';
+import AppLayout from '@/components/layout/AppLayout';
 
 // Mock data - in a real app, this would come from your database
 const mockTeamMembers = [
@@ -113,104 +114,106 @@ export default function TeamPage() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <TeamHeader
-        teamSize={teamMembers.length}
-        avgCompletionRate={avgCompletionRate}
-        onInviteClick={() => setShowInviteDialog(true)}
-      />
+    <AppLayout>
+      <div className="space-y-6">
+        <TeamHeader
+          teamSize={teamMembers.length}
+          avgCompletionRate={avgCompletionRate}
+          onInviteClick={() => setShowInviteDialog(true)}
+        />
 
-      <AnimatedContainer animation="slide-up" delay={0.3}>
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search team members..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </AnimatedContainer>
-
-      <AnimatedContainer animation="fade" delay={0.4}>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredMembers.map((member, index) => (
-            <AnimatedContainer 
-              key={member.id} 
-              animation="scale" 
-              delay={0.5 + index * 0.1}
-            >
-              <TeamMemberCard
-                member={member}
-                onRoleChange={handleRoleChange}
-                onRemove={handleRemoveMember}
-                currentUserRole={currentUserRole}
-              />
-            </AnimatedContainer>
-          ))}
-        </div>
-      </AnimatedContainer>
-
-      {filteredMembers.length === 0 && (
-        <AnimatedContainer animation="fade" delay={0.3}>
-          <Card className="text-center py-12">
-            <CardContent>
-              <div className="text-gray-500">
-                <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No team members found</h3>
-                <p className="text-sm">
-                  {searchTerm ? 'Try adjusting your search terms.' : 'Invite team members to get started.'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </AnimatedContainer>
-      )}
-
-      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite Team Member</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+        <AnimatedContainer animation="slide-up" delay={0.3}>
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                id="email"
-                type="email"
-                placeholder="Enter email address"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="Search team members..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  {currentUserRole === 'admin' && (
-                    <SelectItem value="admin">Admin</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleInvite}>
-                Send Invitation
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </AnimatedContainer>
+
+        <AnimatedContainer animation="fade" delay={0.4}>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredMembers.map((member, index) => (
+              <AnimatedContainer 
+                key={member.id} 
+                animation="scale" 
+                delay={0.5 + index * 0.1}
+              >
+                <TeamMemberCard
+                  member={member}
+                  onRoleChange={handleRoleChange}
+                  onRemove={handleRemoveMember}
+                  currentUserRole={currentUserRole}
+                />
+              </AnimatedContainer>
+            ))}
+          </div>
+        </AnimatedContainer>
+
+        {filteredMembers.length === 0 && (
+          <AnimatedContainer animation="fade" delay={0.3}>
+            <Card className="text-center py-12">
+              <CardContent>
+                <div className="text-muted-foreground">
+                  <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">No team members found</h3>
+                  <p className="text-sm">
+                    {searchTerm ? 'Try adjusting your search terms.' : 'Invite team members to get started.'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </AnimatedContainer>
+        )}
+
+        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite Team Member</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter email address"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select value={inviteRole} onValueChange={setInviteRole}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    {currentUserRole === 'admin' && (
+                      <SelectItem value="admin">Admin</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleInvite}>
+                  Send Invitation
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AppLayout>
   );
 }

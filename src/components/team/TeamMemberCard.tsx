@@ -84,11 +84,11 @@ export default function TeamMemberCard({
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
       case 'manager':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     }
   };
 
@@ -97,7 +97,7 @@ export default function TeamMemberCard({
 
   return (
     <AnimatedContainer animation="scale" delay={0.1}>
-      <Card ref={cardRef} className="transition-all duration-200 hover:shadow-lg">
+      <Card ref={cardRef} className="transition-all duration-200 hover:shadow-lg dark:bg-card dark:border-border">
         <CardContent className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
@@ -110,7 +110,7 @@ export default function TeamMemberCard({
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-sm font-semibold text-gray-900 truncate">
+                  <h3 className="text-sm font-semibold text-foreground truncate">
                     {member.name}
                   </h3>
                   <Badge 
@@ -122,12 +122,12 @@ export default function TeamMemberCard({
                   </Badge>
                 </div>
                 
-                <div className="flex items-center text-xs text-gray-500 mb-2">
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
                   <Mail className="h-3 w-3 mr-1" />
                   <span className="truncate">{member.email}</span>
                 </div>
                 
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground">
                   {member.tasksCompleted} tasks completed
                   {member.lastActive && (
                     <span className="ml-2">
@@ -177,7 +177,7 @@ export default function TeamMemberCard({
                   )}
                   <DropdownMenuItem 
                     onClick={() => onRemove?.(member.id)}
-                    className="text-red-600"
+                    className="text-red-600 dark:text-red-400"
                   >
                     Remove from team
                   </DropdownMenuItem>

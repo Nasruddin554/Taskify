@@ -19,7 +19,7 @@ export default function TeamHeader({
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Team</h1>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Team</h1>
             <p className="text-muted-foreground mt-1">
               View and manage your team members
             </p>
@@ -36,7 +36,7 @@ export default function TeamHeader({
         </div>
 
         <AnimatedContainer 
-          className="mt-6 p-4 bg-muted rounded-lg"
+          className="mt-6 p-4 bg-muted/50 dark:bg-muted/10 rounded-lg border dark:border-border"
           animation="scale"
           delay={0.4}
           duration={0.5}
@@ -53,7 +53,7 @@ export default function TeamHeader({
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Team Size</div>
-                <div className="text-xl font-bold">{teamSize} members</div>
+                <div className="text-xl font-bold text-foreground">{teamSize} members</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -65,7 +65,7 @@ export default function TeamHeader({
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Avg. Task Completion</div>
-                <div className="text-xl font-bold">
+                <div className="text-xl font-bold text-foreground">
                   {avgCompletionRate}%
                 </div>
               </div>
