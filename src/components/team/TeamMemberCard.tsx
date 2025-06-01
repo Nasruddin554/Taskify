@@ -1,204 +1,192 @@
 
-import { useRef, useEffect } from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from 'date-fns';
-import { TeamMember } from "@/hooks/use-team";
-import { MessageSquare, UserMinus, Shield } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useGSAP } from "@/hooks/use-gsap";
-import { useInView } from "@/hooks/use-in-view";
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { MoreVertical, Mail, Shield, User } from 'lucide-react';
+import { useGSAP } from '@/hooks/use-gsap';
+import { useRef, useEffect } from 'react';
+import { AnimatedContainer } from '@/components/ui/animated-container';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'manager' | 'user';
+  avatar?: string;
+  lastActive?: string;
+  tasksCompleted: number;
+}
 
 interface TeamMemberCardProps {
   member: TeamMember;
-  stats: {
-    total: number;
-    completed: number;
-    inProgress: number;
-    todo: number;
-    review: number;
-    completionRate: number;
-  };
-  onMessageClick?: (member: TeamMember) => void;
-  onRemoveClick?: (member: TeamMember) => void;
-  onRoleClick?: (member: TeamMember) => void;
-  onViewDetailsClick?: () => void;
-  index?: number; // For staggered animations
+  onRoleChange?: (memberId: string, newRole: string) => void;
+  onRemove?: (memberId: string) => void;
+  currentUserRole?: string;
 }
 
 export default function TeamMemberCard({
   member,
-  stats,
-  onMessageClick,
-  onRemoveClick,
-  onRoleClick,
-  onViewDetailsClick,
-  index = 0
+  onRoleChange,
+  onRemove,
+  currentUserRole = 'user'
 }: TeamMemberCardProps) {
-  const { gsap, createTimeline } = useGSAP();
   const cardRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(cardRef, 0.1, true);
-  
-  // Animation on mount
-  useEffect(() => {
-    if (!cardRef.current || !inView) return;
-    
-    const tl = createTimeline();
-    
-    // Initial animation for the card
-    tl.fromTo(
-      cardRef.current,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.5, delay: 0.1 * index }
-    );
-    
-    // Animate card content after the card appears
-    if (cardRef.current.querySelector('.card-content')) {
-      tl.fromTo(
-        cardRef.current.querySelectorAll('.animate-item'),
-        { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, stagger: 0.1, duration: 0.4, ease: "power2.out" }, 
-        "-=0.2"
-      );
-    }
-    
-  }, [inView, index, createTimeline]);
+  const { gsap } = useGSAP();
 
-  const getRoleBadgeVariant = (role: string) => {
+  useEffect(() => {
+    if (!gsap || !cardRef.current) return;
+
+    const card = cardRef.current;
+    
+    const handleMouseEnter = () => {
+      gsap.to(card, {
+        scale: 1.02,
+        duration: 0.3,
+        ease: "power2.out"
+      });
+    };
+
+    const handleMouseLeave = () => {
+      gsap.to(card, {
+        scale: 1,
+        duration: 0.3,
+        ease: "power2.out"
+      });
+    };
+
+    card.addEventListener('mouseenter', handleMouseEnter);
+    card.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      card.removeEventListener('mouseenter', handleMouseEnter);
+      card.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [gsap]);
+
+  const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'default'; // Primary color
+        return <Shield className="h-3 w-3" />;
       case 'manager':
-        return 'outline'; // Secondary color
+        return <User className="h-3 w-3" />;
       default:
-        return 'secondary'; // Muted color
+        return <User className="h-3 w-3" />;
     }
   };
 
-  const getTimeStatus = () => {
-    if (!member.lastActive) return null;
-    
-    try {
-      const lastActive = new Date(member.lastActive);
-      const timeAgo = formatDistanceToNow(lastActive, { addSuffix: true });
-      return `Active ${timeAgo}`;
-    } catch (error) {
-      return null;
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'manager':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  const canManageRole = currentUserRole === 'admin' || 
+                       (currentUserRole === 'manager' && member.role === 'user');
 
   return (
-    <Card ref={cardRef} className="opacity-0 transform">
-      <CardContent className="pt-6 card-content">
-        <div className="flex flex-col md:flex-row gap-4 items-center md:items-start text-center md:text-left">
-          <Avatar className="w-16 h-16 animate-item">
-            <AvatarImage src={member.avatar} alt={member.name} />
-            <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div className="space-y-1 flex-1">
-            <div className="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-between animate-item">
-              <h3 className="font-semibold text-lg">{member.name}</h3>
-              <Badge variant={getRoleBadgeVariant(member.role)} className="md:self-start">
-                {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-              </Badge>
+    <AnimatedContainer animation="scale" delay={0.1}>
+      <Card ref={cardRef} className="transition-all duration-200 hover:shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={member.avatar} alt={member.name} />
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  {member.name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate">
+                    {member.name}
+                  </h3>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${getRoleColor(member.role)}`}
+                  >
+                    {getRoleIcon(member.role)}
+                    <span className="ml-1 capitalize">{member.role}</span>
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center text-xs text-gray-500 mb-2">
+                  <Mail className="h-3 w-3 mr-1" />
+                  <span className="truncate">{member.email}</span>
+                </div>
+                
+                <div className="text-xs text-gray-500">
+                  {member.tasksCompleted} tasks completed
+                  {member.lastActive && (
+                    <span className="ml-2">
+                      • Last active {member.lastActive}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground animate-item">{member.email}</p>
-            {member.teamRole && member.teamRole !== member.role && (
-              <Badge variant="outline" className="bg-primary/10 animate-item">
-                Team: {member.teamRole}
-              </Badge>
-            )}
-            {getTimeStatus() && (
-              <p className="text-xs text-muted-foreground animate-item">{getTimeStatus()}</p>
-            )}
-          </div>
-        </div>
 
-        <div className="mt-4 space-y-3">
-          <div className="animate-item">
-            <div className="flex justify-between text-sm mb-1">
-              <span>Task Completion</span>
-              <span className="font-medium">{stats.completionRate}%</span>
-            </div>
-            <Progress 
-              value={stats.completionRate} 
-              className="h-2"
-              // Add custom color classes based on completion rate
-              indicatorClassName={cn(
-                stats.completionRate < 30 ? "bg-red-500" : 
-                stats.completionRate < 70 ? "bg-yellow-500" : 
-                "bg-green-500"
-              )}
-            />
+            {canManageRole && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {currentUserRole === 'admin' && (
+                    <>
+                      <DropdownMenuItem 
+                        onClick={() => onRoleChange?.(member.id, 'admin')}
+                        disabled={member.role === 'admin'}
+                      >
+                        Make Admin
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => onRoleChange?.(member.id, 'manager')}
+                        disabled={member.role === 'manager'}
+                      >
+                        Make Manager
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => onRoleChange?.(member.id, 'user')}
+                        disabled={member.role === 'user'}
+                      >
+                        Make User
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {currentUserRole === 'manager' && member.role === 'user' && (
+                    <DropdownMenuItem 
+                      onClick={() => onRoleChange?.(member.id, 'manager')}
+                    >
+                      Make Manager
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem 
+                    onClick={() => onRemove?.(member.id)}
+                    className="text-red-600"
+                  >
+                    Remove from team
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
-          
-          <div className="flex justify-between text-sm animate-item">
-            <span>Total Tasks: {stats.total}</span>
-            <span>Completed: {stats.completed}</span>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            <div className="bg-muted p-2 rounded text-center animate-item">
-              <div className="text-lg font-semibold">{stats.todo}</div>
-              <div className="text-xs text-muted-foreground">Todo</div>
-            </div>
-            <div className="bg-muted p-2 rounded text-center animate-item">
-              <div className="text-lg font-semibold">{stats.inProgress}</div>
-              <div className="text-xs text-muted-foreground">In Progress</div>
-            </div>
-            <div className="bg-muted p-2 rounded text-center animate-item">
-              <div className="text-lg font-semibold">{stats.review}</div>
-              <div className="text-xs text-muted-foreground">Review</div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="flex flex-wrap gap-2 justify-between animate-item">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onViewDetailsClick}
-        >
-          View Details
-        </Button>
-        <div className="flex gap-2">
-          {onRoleClick && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => onRoleClick(member)}
-              title="Manage Role"
-            >
-              <Shield className="h-4 w-4" />
-            </Button>
-          )}
-          {onMessageClick && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => onMessageClick(member)}
-              title="Send Message"
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-          )}
-          {onRemoveClick && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={() => onRemoveClick(member)}
-              title="Remove Member"
-            >
-              <UserMinus className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </CardFooter>
-    </Card>
+        </CardContent>
+      </Card>
+    </AnimatedContainer>
   );
 }

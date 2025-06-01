@@ -1,114 +1,116 @@
 
-import React, { useRef, useEffect, useState } from "react";
-import { useGSAP } from "@/hooks/use-gsap";
-import { cn } from "@/lib/utils";
-import { useInView } from "@/hooks/use-in-view";
+import { useRef, useEffect, ReactNode } from 'react';
+import { useGSAP } from '@/hooks/use-gsap';
+import { cn } from '@/lib/utils';
+
+export type AnimationType = 
+  | 'fade' 
+  | 'slide-up' 
+  | 'slide-down' 
+  | 'slide-left' 
+  | 'slide-right'
+  | 'scale'
+  | 'reveal'
+  | 'blur'
+  | 'bounce';
+
+export type OriginType = 'top' | 'bottom' | 'left' | 'right' | 'center';
 
 interface AnimatedContainerProps {
-  children: React.ReactNode;
-  animation?: "fade" | "slide" | "scale" | "none" | "reveal";
+  children: ReactNode;
+  animation?: AnimationType;
   delay?: number;
   duration?: number;
+  origin?: OriginType;
   className?: string;
-  stagger?: boolean;
-  staggerAmount?: number;
-  from?: Record<string, any>; // Custom GSAP from properties
-  to?: Record<string, any>; // Custom GSAP to properties
-  triggerOnce?: boolean;
-  threshold?: number; // Viewport threshold for triggering animation
-  origin?: 'left' | 'right' | 'top' | 'bottom'; // Direction for reveal/slide animations
+  once?: boolean;
+  trigger?: string;
 }
 
 export function AnimatedContainer({
   children,
-  animation = "fade",
+  animation = 'fade',
   delay = 0,
-  duration = 0.5,
+  duration = 0.6,
+  origin = 'center',
   className,
-  stagger = false,
-  staggerAmount = 0.1,
-  from,
-  to,
-  triggerOnce = true,
-  threshold = 0.1,
-  origin = 'bottom',
+  once = true,
+  trigger
 }: AnimatedContainerProps) {
-  const { gsap, createTimeline, fadeIn, reveal } = useGSAP();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const inView = useInView(containerRef, threshold, triggerOnce);
+  const { gsap } = useGSAP();
 
   useEffect(() => {
-    // Skip if already animated and triggerOnce is true
-    if (triggerOnce && hasAnimated) return;
-    
-    // Only animate when in view 
-    if (!inView || !containerRef.current) return;
+    if (!gsap || !containerRef.current) return;
 
-    const elements = stagger 
-      ? containerRef.current.children 
-      : containerRef.current;
+    const element = containerRef.current;
     
-    // For simple animations, use our pre-built animation helpers
-    if (animation === "fade" && !from && !to) {
-      fadeIn(elements, duration, delay, 20);
-      setHasAnimated(true);
-      return;
-    }
-    
-    if (animation === "reveal") {
-      reveal(elements, duration, delay, origin);
-      setHasAnimated(true);
-      return;
-    }
-    
-    // For custom animations, use the timeline approach
-    let fromVars: Record<string, any> = {};
-    let toVars: Record<string, any> = { duration, ease: "power2.out" };
-    
-    // Apply custom properties if provided
-    if (from) {
-      fromVars = { ...fromVars, ...from };
-    }
-    
-    if (to) {
-      toVars = { ...toVars, ...to };
-    }
-    
-    // Set animation based on type if no custom properties
-    if (!from) {
+    // Set initial state based on animation type
+    const getInitialState = () => {
       switch (animation) {
-        case "slide":
-          const slideX = origin === 'left' ? -50 : origin === 'right' ? 50 : 0;
-          const slideY = origin === 'top' ? -30 : origin === 'bottom' ? 30 : 0;
-          fromVars = { x: slideX, y: slideY, opacity: 0, ...fromVars };
-          toVars = { x: 0, y: 0, opacity: 1, ...toVars };
-          break;
-        case "scale":
-          fromVars = { scale: 0.8, opacity: 0, ...fromVars };
-          toVars = { scale: 1, opacity: 1, ...toVars };
-          break;
-        case "none":
+        case 'fade':
+          return { opacity: 0 };
+        case 'slide-up':
+          return { opacity: 0, y: 50 };
+        case 'slide-down':
+          return { opacity: 0, y: -50 };
+        case 'slide-left':
+          return { opacity: 0, x: 50 };
+        case 'slide-right':
+          return { opacity: 0, x: -50 };
+        case 'scale':
+          return { opacity: 0, scale: 0.8 };
+        case 'reveal':
+          return { opacity: 0, clipPath: 'inset(0 100% 0 0)' };
+        case 'blur':
+          return { opacity: 0, filter: 'blur(10px)' };
+        case 'bounce':
+          return { opacity: 0, scale: 0.3 };
         default:
-          // No animation
-          return;
+          return { opacity: 0 };
       }
-    }
-    
-    const tl = createTimeline({ delay });
-    
-    if (stagger) {
-      tl.fromTo(elements, fromVars, {
-        ...toVars,
-        stagger: staggerAmount,
-      });
-    } else {
-      tl.fromTo(elements, fromVars, toVars);
-    }
-    
-    setHasAnimated(true);
-  }, [animation, delay, duration, stagger, staggerAmount, from, to, inView, triggerOnce, hasAnimated, origin, fadeIn, reveal, createTimeline]);
-  
+    };
+
+    // Set final state
+    const getFinalState = () => {
+      switch (animation) {
+        case 'fade':
+          return { opacity: 1 };
+        case 'slide-up':
+        case 'slide-down':
+          return { opacity: 1, y: 0 };
+        case 'slide-left':
+        case 'slide-right':
+          return { opacity: 1, x: 0 };
+        case 'scale':
+          return { opacity: 1, scale: 1 };
+        case 'reveal':
+          return { opacity: 1, clipPath: 'inset(0 0% 0 0)' };
+        case 'blur':
+          return { opacity: 1, filter: 'blur(0px)' };
+        case 'bounce':
+          return { opacity: 1, scale: 1 };
+        default:
+          return { opacity: 1 };
+      }
+    };
+
+    // Set initial state
+    gsap.set(element, getInitialState());
+
+    // Animate to final state
+    const tween = gsap.to(element, {
+      ...getFinalState(),
+      duration,
+      delay,
+      ease: animation === 'bounce' ? 'back.out(1.7)' : 'power2.out'
+    });
+
+    return () => {
+      tween.kill();
+    };
+  }, [gsap, animation, delay, duration, origin, once, trigger]);
+
   return (
     <div ref={containerRef} className={cn(className)}>
       {children}
