@@ -75,21 +75,15 @@ export default function Dashboard() {
       
       <TaskSummary />
       
-      <Tabs defaultValue="upcoming" className="mb-6">
-        <TabsList className="inline-flex gap-2 rounded-lg bg-gray-100/80 dark:bg-[#262733]/60 p-1 shadow-sm">
-          <TabsTrigger value="upcoming" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:font-bold">
-            Upcoming
-          </TabsTrigger>
-          <TabsTrigger value="overdue" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:font-bold">
-            Overdue
-          </TabsTrigger>
-          <TabsTrigger value="created" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:font-bold">
-            Created by Me
-          </TabsTrigger>
+      <Tabs defaultValue="upcoming" className="mb-8">
+        <TabsList>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="overdue">Overdue</TabsTrigger>
+          <TabsTrigger value="created">Created by Me</TabsTrigger>
         </TabsList>
         
         <TabsContent value="upcoming" className="mt-4">
-          <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
+          <Card>
             <CardHeader>
               <CardTitle>Tasks Due Soon</CardTitle>
               <CardDescription>Tasks assigned to you due in the next 3 days</CardDescription>
@@ -102,7 +96,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400 text-center py-8">
+                <p className="text-muted-foreground text-center py-8">
                   No tasks due in the next 3 days
                 </p>
               )}
@@ -111,7 +105,7 @@ export default function Dashboard() {
         </TabsContent>
         
         <TabsContent value="overdue" className="mt-4">
-          <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
+          <Card>
             <CardHeader>
               <CardTitle>Overdue Tasks</CardTitle>
               <CardDescription>Tasks assigned to you that are past the due date</CardDescription>
@@ -124,7 +118,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400 text-center py-8">
+                <p className="text-muted-foreground text-center py-8">
                   No overdue tasks. Great job!
                 </p>
               )}
@@ -133,7 +127,7 @@ export default function Dashboard() {
         </TabsContent>
         
         <TabsContent value="created" className="mt-4">
-          <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
+          <Card>
             <CardHeader>
               <CardTitle>Tasks Created by Me</CardTitle>
               <CardDescription>Tasks you created and assigned to team members</CardDescription>
@@ -146,7 +140,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-400 text-center py-8">
+                <p className="text-muted-foreground text-center py-8">
                   You haven't created any tasks yet
                 </p>
               )}
@@ -155,7 +149,7 @@ export default function Dashboard() {
         </TabsContent>
       </Tabs>
       
-      <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
+      <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
           <CardDescription>Recently updated tasks</CardDescription>
@@ -164,11 +158,11 @@ export default function Dashboard() {
           {recentlyUpdatedTasks.length > 0 ? (
             <div className="space-y-4">
               {recentlyUpdatedTasks.map(task => (
-                <div key={task.id} className="flex items-start gap-4 p-4 rounded-lg bg-gray-50">
+                <div key={task.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/40">
                   <div className="flex-1">
                     <h4 className="font-medium">{task.title}</h4>
-                    <p className="text-sm text-gray-500 line-clamp-1">{task.description}</p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-sm text-muted-foreground line-clamp-1">{task.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
                       Updated {formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}
                     </p>
                   </div>
@@ -181,7 +175,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-400 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               No recent activity
             </p>
           )}

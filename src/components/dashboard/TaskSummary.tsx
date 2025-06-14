@@ -1,3 +1,4 @@
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/contexts/TaskContext';
 import TaskStatusCard from './TaskStatusCard';
@@ -32,7 +33,7 @@ export default function TaskSummary() {
 
   return (
     <AnimatedContainer 
-      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6"
+      className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8"
       animation="fade"
       delay={0.2}
       duration={0.5}
@@ -40,26 +41,29 @@ export default function TaskSummary() {
       <TaskStatusCard
         title="Assigned to You"
         count={userTasks.length}
-        icon={<ClipboardCheck className="text-primary h-6 w-6" />}
+        icon={<ClipboardCheck className="text-primary h-5 w-5" />}
         description="Total tasks"
       />
+      
       <TaskStatusCard
         title="Due Today"
         count={tasksDueToday.length}
-        icon={<Clock className="text-amber-500 h-6 w-6" />}
+        icon={<Clock className="text-amber-500 h-5 w-5" />}
         description="Tasks to complete today"
       />
+      
       <TaskStatusCard
         title="Overdue"
         count={overdueTasks.length}
-        icon={<AlertTriangle className="text-red-500 h-6 w-6" />}
+        icon={<AlertTriangle className="text-red-500 h-5 w-5" />}
         description="Tasks past due date"
-        className={overdueTasks.length > 0 ? "border-red-200 dark:border-red-500/60" : ""}
+        className={overdueTasks.length > 0 ? "border-red-200" : ""}
       />
+      
       <TaskStatusCard
         title="Completed"
         count={completedTasks.length}
-        icon={<CheckCircle2 className="text-green-500 h-6 w-6" />}
+        icon={<CheckCircle2 className="text-green-500 h-5 w-5" />}
         description="Finished tasks"
       />
     </AnimatedContainer>

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,17 +102,4 @@
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-/* Custom gradient background utility (Instagram-style, from user image) */
-@layer utilities {
-  .bg-gradient-insta {
-    background: linear-gradient(
-      180deg,
-      #f9d39e 0%,
-      #f3db99 30%,
-      #ccd8a9 56%,
-      #5ec3aa 100%
-    );
-  }
 }
