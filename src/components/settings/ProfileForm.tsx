@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Check, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { uploadAvatar } from '@/hooks/use-avatar-upload';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -60,6 +60,9 @@ export default function ProfileForm() {
     }
   }, [user, form]);
 
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   async function onSubmit(data: ProfileFormValues) {
     const success = await updateProfile(data);
     if (success) {
@@ -68,10 +71,33 @@ export default function ProfileForm() {
   }
 
   const handleAvatarUpdate = () => {
-    toast({
-      title: "Feature coming soon",
-      description: "Avatar upload will be available in a future update.",
-    });
+    // Show file picker
+    fileInputRef.current?.click();
+  };
+
+  const onAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setAvatarUploading(true);
+    const avatarUrl = await uploadAvatar(user.id, file);
+    if (avatarUrl) {
+      // Update profile with new avatar image
+      await updateProfile({ avatar: avatarUrl });
+      toast({
+        title: "Avatar updated",
+        description: "Your profile photo has been updated.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to upload new avatar. Please try again.",
+        variant: "destructive",
+      });
+    }
+    setAvatarUploading(false);
+    // Reset input
+    e.target.value = "";
   };
 
   // Get user initials for avatar fallback
@@ -96,9 +122,23 @@ export default function ProfileForm() {
             variant="outline" 
             size="sm" 
             onClick={handleAvatarUpdate}
+            disabled={avatarUploading}
           >
-            Change Avatar
+            {avatarUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
+              </>
+            ) : (
+              <>Change Avatar</>
+            )}
           </Button>
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={onAvatarFileChange}
+          />
         </div>
       </div>
     
