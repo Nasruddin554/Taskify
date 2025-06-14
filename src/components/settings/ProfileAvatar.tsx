@@ -21,6 +21,34 @@ export function ProfileAvatar({ user, updateProfile }: ProfileAvatarProps) {
   const onAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+
+    // IMAGE VALIDATION: Only JPG/JPEG and ≤5MB
+    const isJpeg =
+      file.type === "image/jpeg" ||
+      file.type === "image/jpg" ||
+      (file.name && /\.(jpe?g)$/i.test(file.name));
+    const isSmallEnough = file.size <= 5 * 1024 * 1024;
+
+    if (!isJpeg) {
+      toast({
+        title: "Invalid file type",
+        description: "Only JPG or JPEG images are allowed.",
+        variant: "destructive",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    if (!isSmallEnough) {
+      toast({
+        title: "File too large",
+        description: "Image must be 5MB or smaller.",
+        variant: "destructive",
+      });
+      e.target.value = "";
+      return;
+    }
+
     setAvatarUploading(true);
     const avatarUrl = await uploadAvatar(user.id, file);
     if (avatarUrl) {
@@ -74,7 +102,7 @@ export function ProfileAvatar({ user, updateProfile }: ProfileAvatarProps) {
         </Button>
         <input
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/jpg"
           ref={fileInputRef}
           className="hidden"
           onChange={onAvatarFileChange}
