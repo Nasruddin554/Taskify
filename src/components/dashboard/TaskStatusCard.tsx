@@ -18,16 +18,16 @@ export default function TaskStatusCard({
   className,
 }: TaskStatusCardProps) {
   return (
-    <Card className={className}>
+    <Card className={`bg-white text-gray-900 rounded-xl shadow ${className || ''} border border-gray-100`}>
       <CardContent className="p-6 flex items-center gap-4">
-        <div className="bg-primary/10 p-3 rounded-full animate-pulse-subtle">
+        <div className="bg-gray-100 p-3 rounded-full flex items-center justify-center">
           {icon}
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
+          <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold">{count}</span>
-            <span className="text-xs text-muted-foreground">{description}</span>
+            <span className="text-xs text-gray-400">{description}</span>
           </div>
         </div>
       </CardContent>

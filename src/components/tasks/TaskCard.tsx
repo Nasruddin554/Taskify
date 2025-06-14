@@ -31,15 +31,15 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'todo':
-        return 'bg-gray-200 text-gray-700';
+        return 'bg-gray-100 text-gray-800';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-100 text-blue-800';
       case 'review':
-        return 'bg-amber-100 text-amber-700';
+        return 'bg-amber-100 text-amber-800';
       case 'completed':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 text-green-800';
       default:
-        return 'bg-gray-200 text-gray-700';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -52,17 +52,17 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
       case 'high':
         return 'bg-red-100 text-red-700';
       default:
-        return 'bg-gray-200 text-gray-700';
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
   const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'completed';
 
   return (
-    <Card className={`w-full hover:shadow-md transition-shadow ${isOverdue ? 'border-red-400' : ''} bg-[#1e1e24] text-white`}>
+    <Card className={`w-full hover:shadow-md transition-shadow ${isOverdue ? 'border-red-300' : 'border-gray-100'} bg-white text-gray-900 shadow rounded-xl`}>
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-medium text-lg">{task.title}</h3>
+          <h3 className="font-semibold text-lg">{task.title}</h3>
           <div className="flex gap-1">
             <Badge className={getPriorityColor(task.priority)}>
               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
@@ -75,10 +75,10 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
           </div>
         </div>
         
-        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">{task.description}</p>
+        <p className="text-gray-500 text-sm mb-3 line-clamp-2">{task.description}</p>
         
         <div className="flex flex-col gap-1">
-          <div className="flex items-center text-xs text-muted-foreground">
+          <div className="flex items-center text-xs text-gray-500">
             <Calendar className="w-3 h-3 mr-1" />
             <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
             
@@ -90,20 +90,20 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
             )}
           </div>
           
-          <div className="flex items-center text-xs text-muted-foreground">
+          <div className="flex items-center text-xs text-gray-400">
             <Clock className="w-3 h-3 mr-1" />
             <span>Updated {formatDistanceToNow(new Date(task.updatedAt), { addSuffix: true })}</span>
           </div>
         </div>
       </CardContent>
       
-      <CardFooter className="px-4 py-3 flex sm:flex-row justify-between bg-[#252530] border-t border-gray-700 flex-col gap-2 sm:gap-0">
+      <CardFooter className="px-4 py-3 flex sm:flex-row justify-between bg-transparent border-t border-gray-100 flex-col gap-2 sm:gap-0">
         <div className="flex space-x-2">
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => onEdit(task)}
-            className="bg-transparent border-gray-600 hover:bg-gray-700"
+            className="bg-white border-gray-200 hover:bg-gray-100"
           >
             <Edit className="w-4 h-4 mr-1" />
             Edit
@@ -112,7 +112,7 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
             variant="outline" 
             size="sm"
             onClick={() => deleteTask(task.id)}
-            className="bg-transparent border-gray-600 hover:bg-gray-700 text-red-400 hover:text-red-300"
+            className="bg-white border-gray-200 hover:bg-gray-100 text-red-500 hover:text-red-400"
           >
             <Trash2 className="w-4 h-4 mr-1" />
             Delete
@@ -125,7 +125,7 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="text-green-400 hover:bg-green-900/30 w-full sm:w-auto justify-center"
+                className="text-green-600 hover:bg-green-100 w-full sm:w-auto justify-center"
                 onClick={() => handleStatusChange('completed')}
               >
                 <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -135,7 +135,7 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="text-blue-400 hover:bg-blue-900/30 w-full sm:w-auto justify-center"
+                className="text-blue-600 hover:bg-blue-100 w-full sm:w-auto justify-center"
                 onClick={() => handleStatusChange(
                   task.status === 'todo' ? 'in-progress' : 'review'
                 )}
@@ -152,7 +152,7 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-amber-400 hover:bg-amber-900/30 w-full sm:w-auto justify-center"
+              className="text-amber-600 hover:bg-amber-100 w-full sm:w-auto justify-center"
               onClick={() => handleStatusChange('todo')}
             >
               Reopen
@@ -163,3 +163,4 @@ export default function TaskCard({ task, onEdit }: TaskCardProps) {
     </Card>
   );
 }
+
