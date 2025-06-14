@@ -24,7 +24,7 @@ const App = () => (
         <TaskProvider>
           <TooltipProvider>
             <Toaster />
-            <div className="min-h-screen bg-background">
+            <div className="min-h-screen bg-gradient-insta">
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/auth" element={<Auth />} />
@@ -43,3 +43,4 @@ const App = () => (
 );
 
 export default App;
+

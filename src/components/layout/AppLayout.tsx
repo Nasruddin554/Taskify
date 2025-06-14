@@ -18,7 +18,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // If still loading auth state, show nothing
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-insta">
         <div className="animate-pulse">Loading...</div>
       </div>
     );
@@ -30,7 +30,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-gradient-insta">
       <AppSidebar />
       
       <main className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16' : ''}`}>
