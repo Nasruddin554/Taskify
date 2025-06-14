@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Task } from '@/types';
 import { useTask } from '@/contexts/TaskContext';
@@ -79,10 +78,10 @@ export default function TaskList() {
       <div>
         <label htmlFor="mobile-status" className="text-sm font-medium block mb-2">Status</label>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger id="mobile-status" className="w-full">
+          <SelectTrigger id="mobile-status" className="w-full dark:bg-[#232330] dark:text-white border dark:border-[#34344a]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="dark:bg-[#232330] dark:text-white dark:border-[#34344a] z-40">
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="todo">To Do</SelectItem>
             <SelectItem value="in-progress">In Progress</SelectItem>
@@ -95,10 +94,10 @@ export default function TaskList() {
       <div>
         <label htmlFor="mobile-priority" className="text-sm font-medium block mb-2">Priority</label>
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger id="mobile-priority" className="w-full">
+          <SelectTrigger id="mobile-priority" className="w-full dark:bg-[#232330] dark:text-white border dark:border-[#34344a]">
             <SelectValue placeholder="Filter by priority" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="dark:bg-[#232330] dark:text-white dark:border-[#34344a] z-40">
             <SelectItem value="all">All Priorities</SelectItem>
             <SelectItem value="low">Low</SelectItem>
             <SelectItem value="medium">Medium</SelectItem>
@@ -108,10 +107,10 @@ export default function TaskList() {
       </div>
       
       <div className="flex gap-2 mt-4">
-        <Button variant="outline" className="flex-1" onClick={resetFilters}>
+        <Button variant="outline" className="flex-1 dark:bg-[#181820] dark:text-white dark:border-[#34344a]" onClick={resetFilters}>
           Reset
         </Button>
-        <Button className="flex-1" onClick={() => setIsFilterSheetOpen(false)}>
+        <Button className="flex-1 dark:bg-primary dark:text-white" onClick={() => setIsFilterSheetOpen(false)}>
           Apply
         </Button>
       </div>
@@ -124,23 +123,23 @@ export default function TaskList() {
       {isMobile && (
         <div className="flex gap-2 mb-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 dark:text-[#a4a6b3]" />
             <Input
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 dark:bg-[#232330] dark:text-white dark:border-[#34344a]"
             />
           </div>
           
           <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" className="px-3">
+              <Button variant="outline" className="px-3 dark:bg-[#181820] dark:text-white dark:border-[#34344a]">
                 <SlidersHorizontal className="h-4 w-4" />
                 <span className="sr-only">Filters</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="h-[350px]">
+            <SheetContent side="bottom" className="h-[350px] dark:bg-[#1a1a25] dark:text-white">
               <SheetHeader>
                 <SheetTitle>Filter Tasks</SheetTitle>
                 <SheetDescription>
@@ -157,22 +156,22 @@ export default function TaskList() {
       {!isMobile && (
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 dark:text-[#a4a6b3]" />
             <Input
               placeholder="Search tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 dark:bg-[#232330] dark:text-white dark:border-[#34344a]"
             />
           </div>
           
           <div className="flex flex-col md:flex-row gap-4">
             <div className="w-full md:w-40">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-[#232330] dark:text-white border dark:border-[#34344a]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-[#232330] dark:text-white dark:border-[#34344a] z-40">
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="todo">To Do</SelectItem>
                   <SelectItem value="in-progress">In Progress</SelectItem>
@@ -184,10 +183,10 @@ export default function TaskList() {
             
             <div className="w-full md:w-40">
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-[#232330] dark:text-white border dark:border-[#34344a]">
                   <SelectValue placeholder="Filter by priority" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-[#232330] dark:text-white dark:border-[#34344a] z-40">
                   <SelectItem value="all">All Priorities</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
@@ -197,7 +196,7 @@ export default function TaskList() {
             </div>
             
             {/* Only show on desktop */}
-            <Button onClick={handleCreateTask} className="hidden md:flex">
+            <Button onClick={handleCreateTask} className="hidden md:flex dark:bg-primary dark:text-white">
               <PlusCircle className="mr-2 h-4 w-4" />
               New Task
             </Button>
@@ -209,11 +208,11 @@ export default function TaskList() {
       {(statusFilter !== 'all' || priorityFilter !== 'all') && (
         <div className="flex flex-wrap gap-2 mb-4">
           {statusFilter !== 'all' && (
-            <div className="bg-secondary/20 text-secondary-foreground px-3 py-1 rounded-full text-xs flex items-center">
+            <div className="bg-secondary/20 text-secondary-foreground px-3 py-1 rounded-full text-xs flex items-center dark:bg-[#3f3f52] dark:text-white border border-gray-300 dark:border-[#2a2a36]">
               Status: {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
               <button 
                 onClick={() => setStatusFilter('all')} 
-                className="ml-1 hover:text-primary"
+                className="ml-1 hover:text-primary dark:hover:text-blue-400"
                 aria-label="Clear status filter"
               >
                 ×
@@ -222,11 +221,11 @@ export default function TaskList() {
           )}
           
           {priorityFilter !== 'all' && (
-            <div className="bg-secondary/20 text-secondary-foreground px-3 py-1 rounded-full text-xs flex items-center">
+            <div className="bg-secondary/20 text-secondary-foreground px-3 py-1 rounded-full text-xs flex items-center dark:bg-[#3f3f52] dark:text-white border border-gray-300 dark:border-[#2a2a36]">
               Priority: {priorityFilter.charAt(0).toUpperCase() + priorityFilter.slice(1)}
               <button 
                 onClick={() => setPriorityFilter('all')} 
-                className="ml-1 hover:text-primary"
+                className="ml-1 hover:text-primary dark:hover:text-blue-400"
                 aria-label="Clear priority filter"
               >
                 ×
@@ -236,7 +235,7 @@ export default function TaskList() {
           
           <button 
             onClick={resetFilters}
-            className="text-xs text-primary hover:text-primary/80 underline"
+            className="text-xs text-primary hover:text-primary/80 underline dark:text-blue-400 dark:hover:text-blue-200"
           >
             Clear all
           </button>
@@ -263,7 +262,7 @@ export default function TaskList() {
               : "Try adjusting your filters to see more results"}
           </p>
           {tasks.length === 0 && (
-            <Button onClick={handleCreateTask} className="mt-4">
+            <Button onClick={handleCreateTask} className="mt-4 dark:bg-primary dark:text-white">
               <PlusCircle className="mr-2 h-4 w-4" />
               Create Task
             </Button>
