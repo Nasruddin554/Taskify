@@ -76,7 +76,7 @@ export default function Dashboard() {
       <TaskSummary />
       
       <Tabs defaultValue="upcoming" className="mb-6">
-        <TabsList className="inline-flex gap-2 rounded-lg bg-gray-100/80 p-1 shadow-sm">
+        <TabsList className="inline-flex gap-2 rounded-lg bg-gray-100/80 dark:bg-[#262733]/60 p-1 shadow-sm">
           <TabsTrigger value="upcoming" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow data-[state=active]:font-bold">
             Upcoming
           </TabsTrigger>
@@ -89,7 +89,7 @@ export default function Dashboard() {
         </TabsList>
         
         <TabsContent value="upcoming" className="mt-4">
-          <Card className="bg-white rounded-xl shadow border border-gray-100">
+          <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
             <CardHeader>
               <CardTitle>Tasks Due Soon</CardTitle>
               <CardDescription>Tasks assigned to you due in the next 3 days</CardDescription>
@@ -111,7 +111,7 @@ export default function Dashboard() {
         </TabsContent>
         
         <TabsContent value="overdue" className="mt-4">
-          <Card className="bg-white rounded-xl shadow border border-gray-100">
+          <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
             <CardHeader>
               <CardTitle>Overdue Tasks</CardTitle>
               <CardDescription>Tasks assigned to you that are past the due date</CardDescription>
@@ -133,7 +133,7 @@ export default function Dashboard() {
         </TabsContent>
         
         <TabsContent value="created" className="mt-4">
-          <Card className="bg-white rounded-xl shadow border border-gray-100">
+          <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
             <CardHeader>
               <CardTitle>Tasks Created by Me</CardTitle>
               <CardDescription>Tasks you created and assigned to team members</CardDescription>
@@ -155,7 +155,7 @@ export default function Dashboard() {
         </TabsContent>
       </Tabs>
       
-      <Card className="bg-white rounded-xl shadow border border-gray-100">
+      <Card className="bg-white dark:bg-[#20212a]/80 dark:backdrop-blur-md dark:border-zinc-800 rounded-xl shadow border border-gray-100 dark:text-white">
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
           <CardDescription>Recently updated tasks</CardDescription>

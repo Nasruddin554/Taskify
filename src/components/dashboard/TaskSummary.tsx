@@ -43,22 +43,19 @@ export default function TaskSummary() {
         icon={<ClipboardCheck className="text-primary h-6 w-6" />}
         description="Total tasks"
       />
-      
       <TaskStatusCard
         title="Due Today"
         count={tasksDueToday.length}
         icon={<Clock className="text-amber-500 h-6 w-6" />}
         description="Tasks to complete today"
       />
-      
       <TaskStatusCard
         title="Overdue"
         count={overdueTasks.length}
         icon={<AlertTriangle className="text-red-500 h-6 w-6" />}
         description="Tasks past due date"
-        className={overdueTasks.length > 0 ? "border-red-200" : ""}
+        className={overdueTasks.length > 0 ? "border-red-200 dark:border-red-500/60" : ""}
       />
-      
       <TaskStatusCard
         title="Completed"
         count={completedTasks.length}
